@@ -42,14 +42,34 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
     setApps(initialApps);
   }, [initialApps]);
 
+  // 앱 목록이나 탭이 변경될 때 현재 페이지가 총 페이지 수를 초과하지 않도록 보정
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(apps.length / itemsPerPage));
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [apps, itemsPerPage, currentPage]);
+
   const googlePlayApps = apps.filter(app => app.store === "google-play");
   const appStoreApps = apps.filter(app => app.store === "app-store");
 
-  // 페이지네이션 계산
-  const totalPages = Math.ceil(apps.length / itemsPerPage);
+  // 현재 활성 탭의 앱 목록 (페이징 대상)
+  const activeApps = activeTab === "google-play" ? googlePlayApps : appStoreApps;
+
+  // 페이지네이션 계산 (활성 탭 기준)
+  const totalPages = Math.max(1, Math.ceil(activeApps.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentApps = apps.slice(startIndex, endIndex);
+  const pagedApps = activeApps.slice(startIndex, endIndex);
+
+  const getPagedFor = (tab: AppStore) => {
+    const list = tab === 'google-play' ? googlePlayApps : appStoreApps;
+    const total = Math.max(1, Math.ceil(list.length / itemsPerPage));
+    const page = Math.min(currentPage, total);
+    const s = (page - 1) * itemsPerPage;
+    const e = s + itemsPerPage;
+    return list.slice(s, e);
+  };
 
   // 페이지 변경 핸들러
   const handlePageChange = (page: number) => {
@@ -155,16 +175,16 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
         </div>
 
         <TabsContent value="google-play" className="mt-0">
-          {renderAppGrid(googlePlayApps)}
+          {renderAppGrid(getPagedFor('google-play'))}
         </TabsContent>
 
         <TabsContent value="app-store" className="mt-0">
-          {renderAppGrid(appStoreApps)}
+          {renderAppGrid(getPagedFor('app-store'))}
         </TabsContent>
       </Tabs>
 
-      {/* 페이지네이션 - 6개 이상일 때만 표시 */}
-      {apps.length > itemsPerPage && (
+  {/* 페이지네이션 - 활성 탭의 항목이 itemsPerPage 초과할 때만 표시 */}
+  {activeApps.length > itemsPerPage && (
         <div className="flex justify-center items-center space-x-2 mt-8">
           {/* 이전 페이지 버튼 */}
           <Button
@@ -207,9 +227,9 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
       )}
 
       {/* 페이지 정보 */}
-      {apps.length > 0 && (
+      {activeApps.length > 0 && (
         <div className="text-center text-gray-400 text-sm mt-4" onMouseEnter={blockTranslationFeedback}>
-          {startIndex + 1}-{Math.min(endIndex, apps.length)} of {apps.length} items
+          {Math.min(startIndex + 1, activeApps.length)}-{Math.min(endIndex, activeApps.length)} of {activeApps.length} items
         </div>
       )}
     </div>
