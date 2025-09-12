@@ -23,7 +23,7 @@ import { useLanguage } from "@/hooks/use-language";
 import { useAdmin } from "@/hooks/use-admin";
 import { generateUniqueId } from "@/lib/file-utils";
 import { validateAppsImages } from "@/lib/image-utils";
-import { uploadFile, deleteFile } from "@/lib/storage-adapter";
+import { uploadFile } from "@/lib/storage-adapter";
 import { loadAppsFromBlob, loadAppsByTypeFromBlob, saveAppsByTypeToBlob, loadFeaturedIds, loadEventIds, saveFeaturedIds, saveEventIds } from "@/lib/data-loader";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
 import { AppGallery } from "@/components/app-gallery";
@@ -61,9 +61,17 @@ function HomeContent() {
   const { t } = useLanguage();
   const { isAuthenticated: isAdmin } = useAdmin();
   const [adminVisible, setAdminVisible] = useState(false);
-  const [latestApp, setLatestApp] = useState<any>(null);
+  const [latestApp, setLatestApp] = useState<{
+    id: string;
+    title: string;
+    content: string;
+    author: string;
+    imageUrl?: string;
+    publishDate: string;
+    isPublished: boolean;
+    status?: string;
+  } | null>(null);
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   // URL 쿼리 파라미터 처리 - 홈 버튼 클릭 시 도메인으로 이동
   useEffect(() => {
@@ -278,8 +286,8 @@ function HomeContent() {
       if (response.ok) {
         const galleryItems = await response.json();
         const publishedItems = galleryItems
-          .filter((item: any) => item.isPublished || item.status === 'published')
-          .sort((a: any, b: any) => 
+          .filter((item: { isPublished: boolean; status?: string }) => item.isPublished || item.status === 'published')
+          .sort((a: { publishDate: string }, b: { publishDate: string }) => 
             new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
           );
         return publishedItems[0]; // 가장 최근 퍼블리시한 카드 1개만 반환
