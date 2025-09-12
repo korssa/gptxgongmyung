@@ -7,7 +7,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, ArrowLeft, Upload, Trash2, Edit } from "lucide-react";
+import { ArrowLeft, Trash2, Edit } from "lucide-react";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
 import { AdminUploadDialog } from "./admin-upload-dialog";
 import { AdminFeaturedUploadDialog } from "./admin-featured-upload-dialog";
@@ -127,18 +127,6 @@ export function GalleryManager({
             </p>
           </div>
         </div>
-      )}
-
-      {/* 관리자 업로드 버튼 (normal이면 숨김) */}
-      {isAdmin && type !== "normal" && (
-        <Button
-          onClick={() => setIsUploadDialogOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 text-sm font-medium rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
-          onMouseEnter={blockTranslationFeedback}
-        >
-          <Upload className="h-4 w-4 mr-2" />
-          갤러리 업로드
-        </Button>
       )}
 
       {onBack && (
