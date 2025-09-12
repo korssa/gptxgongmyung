@@ -25,6 +25,7 @@ export interface AppItem {
   isFeatured?: boolean; // Featured 앱 여부
   isEvent?: boolean; // Event 앱 여부
   adminStoreUrl?: string; // 관리자 전용 스토어 URL (Events 앱용)
+  appCategory?: 'featured' | 'events' | 'normal'; // 앱 카테고리 분류
 }
 
 export interface AppFormData {
