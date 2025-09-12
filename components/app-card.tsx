@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, User, Download } from "lucide-react";
@@ -132,7 +132,7 @@ export function AppCard({ app, viewMode, onDelete, onEdit, onToggleFeatured, onT
                   <span>{app.uploadDate}</span>
                 </div>
 
-                {app.tags && (
+                {app.tags && app.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {app.tags.map((tag, index) => (
                       <Badge key={index} variant="secondary" className="text-xs">
@@ -316,9 +316,9 @@ export function AppCard({ app, viewMode, onDelete, onEdit, onToggleFeatured, onT
           )}
         </CardContent>
 
-        {/* Download Section - CardContent 밖으로 이동 */}
-        <div className="w-full bg-[#84CC9A] border-t border-gray-300 px-4 py-2">
-          <div className="flex flex-col items-start space-y-1">
+        {/* Download Section - use CardFooter for consistent layout */}
+        <CardFooter className="w-full bg-[#84CC9A] border-t border-gray-300 px-4 py-2">
+          <div className="flex flex-col items-start space-y-1 w-full">
             {/* 하단 2줄 - 다운로드 버튼 */}
             <div className="w-full">
               {app.status === "published" ? (
@@ -352,7 +352,7 @@ export function AppCard({ app, viewMode, onDelete, onEdit, onToggleFeatured, onT
               />
             </div>
           </div>
-        </div>
+        </CardFooter>
       </Card>
 
       {/* 관리자 모드 다이얼로그 */}
