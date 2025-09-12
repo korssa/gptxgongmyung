@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Trash2, Edit } from "lucide-react";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
-import { AdminUploadDialog } from "./admin-upload-dialog";
 import { AdminFeaturedUploadDialog } from "./admin-featured-upload-dialog";
 import { AdminEventsUploadDialog } from "./admin-events-upload-dialog";
 
@@ -43,7 +45,6 @@ export function GalleryManager({
 }: GalleryManagerProps) {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [likes, setLikes] = useState<{ [key: string]: number }>({});
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
@@ -65,9 +66,7 @@ export function GalleryManager({
           setItems(data.filter((item: GalleryItem) => item.isPublished));
         }
       }
-    } catch (error) {
-      console.error("갤러리 로드 실패:", error);
-    }
+    } catch (error) {}
   };
 
   useEffect(() => {
@@ -97,11 +96,6 @@ export function GalleryManager({
     })();
   };
 
-  const handleUploadSuccess = () => {
-    loadItems();
-    setIsUploadDialogOpen(false);
-  };
-
   const totalPages = Math.ceil(items.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
@@ -116,15 +110,17 @@ export function GalleryManager({
 
   return (
     <div className="space-y-6">
-      {/* 제목/설명 → 항상 표시 */}
-      <div className="flex flex-col items-center justify-center space-y-4">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-white">{title}</h2>
-          <p className="text-gray-400" onMouseEnter={blockTranslationFeedback}>
-            {description}
-          </p>
+      {/* 제목/설명 (normal이면 숨김) */}
+      {type !== "normal" && (
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-white">{title}</h2>
+            <p className="text-gray-400" onMouseEnter={blockTranslationFeedback}>
+              {description}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {onBack && (
         <Button
@@ -141,15 +137,17 @@ export function GalleryManager({
       {/* 카드 그리드 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {currentItems.length === 0 ? (
-          <div className="col-span-full">
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-8 text-center text-gray-400">
-                {items.length === 0
-                  ? "아직 업로드된 갤러리 아이템이 없습니다."
-                  : "이 페이지에는 더 이상 아이템이 없습니다."}
-              </CardContent>
-            </Card>
-          </div>
+          type !== "normal" && (
+            <div className="col-span-full">
+              <Card className="bg-gray-800 border-gray-700">
+                <CardContent className="p-8 text-center text-gray-400">
+                  {items.length === 0
+                    ? "아직 업로드된 갤러리 아이템이 없습니다."
+                    : "이 페이지에는 더 이상 아이템이 없습니다."}
+                </CardContent>
+              </Card>
+            </div>
+          )
         ) : (
           currentItems.map((item) => (
             <Card
@@ -257,28 +255,22 @@ export function GalleryManager({
         </div>
       )}
 
-      {/* 업로드 다이얼로그 */}
+      {/* 업로드 다이얼로그 → Upload 버튼이 없으니 자동 열리는 일도 없음 */}
       {isAdmin && (
         <>
-          {type === "featured" ? (
+          {type === "featured" && (
             <AdminFeaturedUploadDialog
-              isOpen={isUploadDialogOpen}
-              onClose={() => setIsUploadDialogOpen(false)}
-              onUploadSuccess={handleUploadSuccess}
+              isOpen={false}
+              onClose={() => {}}
+              onUploadSuccess={loadItems}
               targetGallery={type}
             />
-          ) : type === "events" ? (
+          )}
+          {type === "events" && (
             <AdminEventsUploadDialog
-              isOpen={isUploadDialogOpen}
-              onClose={() => setIsUploadDialogOpen(false)}
-              onUploadSuccess={handleUploadSuccess}
-              targetGallery={type}
-            />
-          ) : (
-            <AdminUploadDialog
-              isOpen={isUploadDialogOpen}
-              onClose={() => setIsUploadDialogOpen(false)}
-              onUploadSuccess={handleUploadSuccess}
+              isOpen={false}
+              onClose={() => {}}
+              onUploadSuccess={loadItems}
               targetGallery={type}
             />
           )}
