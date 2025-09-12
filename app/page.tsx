@@ -67,9 +67,11 @@ function HomeContent() {
     content: string;
     author: string;
     imageUrl?: string;
+    screenshotUrls?: string[];
     publishDate: string;
     isPublished: boolean;
     status?: string;
+    name?: string;
   } | null>(null);
   const searchParams = useSearchParams();
 
