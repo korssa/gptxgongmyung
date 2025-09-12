@@ -861,7 +861,7 @@ function HomeContent() {
                           {latestApp.screenshotUrls && latestApp.screenshotUrls.length > 0 ? (
                                                          <Image
                                src={latestApp.screenshotUrls[0]}
-                               alt={latestApp.name}
+                               alt={latestApp.title}
                                fill
                                unoptimized={isBlobUrl(latestApp.screenshotUrls[0])}
                                className="object-cover object-center"
@@ -886,7 +886,7 @@ function HomeContent() {
                        <div className="flex items-start space-x-3 mb-2">
                                                    <Image
                             src={latestApp.iconUrl}
-                            alt={latestApp.name}
+                            alt={latestApp.title}
                             width={48}
                             height={48}
                             unoptimized={isBlobUrl(latestApp.iconUrl)}
@@ -897,8 +897,8 @@ function HomeContent() {
                             }}
                           />
                          <div className="flex-1 min-w-0">
-                           <h3 className="font-medium text-sm mb-1 truncate notranslate" translate="no">{latestApp.name}</h3>
-                           <p className="text-xs text-muted-foreground truncate notranslate" translate="no">{latestApp.developer}</p>
+                           <h3 className="font-medium text-sm mb-1 truncate notranslate" translate="no">{latestApp.title}</h3>
+                           <p className="text-xs text-muted-foreground truncate notranslate" translate="no">{latestApp.author}</p>
                          </div>
                        </div>
 
