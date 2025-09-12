@@ -27,7 +27,7 @@ import { uploadFile } from "@/lib/storage-adapter";
 import { loadAppsFromBlob, loadAppsByTypeFromBlob, saveAppsByTypeToBlob, loadFeaturedIds, loadEventIds, saveFeaturedIds, saveEventIds } from "@/lib/data-loader";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
 import { AppGallery } from "@/components/app-gallery";
-import { GalleryManager } from "@/components/gallery-manager";
+import GalleryManager from "@/components/gallery-manager";
 import Image from "next/image";
 import { AdminUploadPublishDialog } from "@/components/admin-upload-publish";
 
