@@ -72,6 +72,13 @@ function HomeContent() {
     isPublished: boolean;
     status?: string;
     name?: string;
+    rating?: number;
+    downloads?: string;
+    version?: string;
+    tags?: string[];
+    storeUrl?: string;
+    isEvent?: boolean;
+    store?: string;
   } | null>(null);
   const searchParams = useSearchParams();
 
