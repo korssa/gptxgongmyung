@@ -5,28 +5,15 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Trash2, Edit } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, Star, Download } from "lucide-react";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
 import { AdminFeaturedUploadDialog } from "./admin-featured-upload-dialog";
 import { AdminEventsUploadDialog } from "./admin-events-upload-dialog";
-
-export interface GalleryItem {
-  id: string;
-  title: string;
-  content: string;
-  author: string;
-  imageUrl?: string;
-  publishDate: string;
-  tags?: string[];
-  isPublished: boolean;
-  type: "gallery" | "featured" | "events" | "normal";
-  store?: "google-play" | "app-store";
-  storeUrl?: string;
-  appCategory?: "normal" | "featured" | "events";
-  status?: "published" | "development" | "in-review";
-}
+import { AppItem } from "@/types";
+import Image from "next/image";
 
 interface GalleryManagerProps {
   type: "gallery" | "featured" | "events" | "normal";
@@ -43,7 +30,7 @@ export function GalleryManager({
   onBack,
   isAdmin = false,
 }: GalleryManagerProps) {
-  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [items, setItems] = useState<AppItem[]>([]);
   const [likes, setLikes] = useState<{ [key: string]: number }>({});
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -56,14 +43,14 @@ export function GalleryManager({
         if (type === "gallery" || type === "normal") {
           setItems(
             data.filter(
-              (item: GalleryItem) =>
-                item.isPublished ||
+              (item: AppItem) =>
+                item.status === "published" ||
                 item.status === "in-review" ||
-                item.status === "published"
+                item.status === "development"
             )
           );
         } else {
-          setItems(data.filter((item: GalleryItem) => item.isPublished));
+          setItems(data.filter((item: AppItem) => item.status === "published"));
         }
       }
     } catch (error) {}
@@ -78,7 +65,7 @@ export function GalleryManager({
   const handleDelete = (itemId: string) => {
     createAdminButtonHandler(async () => {
       const item = items.find((item) => item.id === itemId);
-      if (confirm(`"${item?.title}"을(를) 삭제하시겠습니까?`)) {
+      if (confirm(`"${item?.name}"을(를) 삭제하시겠습니까?`)) {
         try {
           const response = await fetch(`/api/gallery?type=${type}&id=${itemId}`, {
             method: "DELETE",
@@ -157,13 +144,15 @@ export function GalleryManager({
               onMouseEnter={blockTranslationFeedback}
             >
               <div className="relative">
-                {/* 이미지 */}
+                {/* Screenshot/App Preview */}
                 <div className="aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
-                  {item.imageUrl ? (
-                    <img
-                      src={item.imageUrl}
-                      alt={item.title}
-                      className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                  {item.screenshotUrls && item.screenshotUrls.length > 0 ? (
+                    <Image
+                      src={item.screenshotUrls[0]}
+                      alt={item.name}
+                      fill
+                      unoptimized={item.screenshotUrls[0].includes('vercel-storage.com') || item.screenshotUrls[0].includes('blob.vercel-storage.com')}
+                      className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (
                     <div className="absolute inset-0 w-full h-full flex items-center justify-center text-6xl">
@@ -172,20 +161,16 @@ export function GalleryManager({
                   )}
                 </div>
 
-                {/* 상태 배지 */}
+                {/* Store Badge */}
                 <div className="absolute bottom-2 left-2">
                   <Badge className={`text-white text-xs ${
-                    item.isPublished 
+                    item.status === 'published' 
                       ? 'bg-green-500' 
                       : item.status === 'in-review' 
                         ? 'bg-orange-500' 
                         : 'bg-gray-500'
                   }`}>
-                    {item.isPublished 
-                      ? 'published' 
-                      : item.status === 'in-review' 
-                        ? 'review' 
-                        : 'draft'}
+                    {item.status}
                   </Badge>
                 </div>
 
@@ -213,6 +198,98 @@ export function GalleryManager({
                   </div>
                 )}
               </div>
+
+              <CardContent className="px-2 py-0" style={{ backgroundColor: '#D1E2EA' }}>
+                {/* App Icon and Basic Info */}
+                <div className="flex items-start space-x-3 mb-2">
+                  <Image
+                    src={item.iconUrl}
+                    alt={item.name}
+                    width={48}
+                    height={48}
+                    unoptimized={item.iconUrl.includes('vercel-storage.com') || item.iconUrl.includes('blob.vercel-storage.com')}
+                    className="w-12 h-12 rounded-xl object-cover object-center flex-shrink-0"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjZjNmNGY2Ii8+CjxwYXRoIGQ9Ik0xMiA2QzEwLjM0IDYgOSA3LjM0IDkgOUM5IDEwLjY2IDEwLjM0IDEyIDEyIDEyQzEzLjY2IDEyIDE1IDEwLjY2IDE1IDlDMTUgNy4zNCAxMy42NiA2IDEyIDZaTTEyIDRDMTQuNzYgNCAxNyA2LjI0IDE3IDlDMTcgMTEuNzYgMTQuNzYgMTQgMTIgMTRDOS4yNCAxNCA3IDExLjc2IDcgOUM3IDYuMjQgOS4yNCA0IDEyIDRaTTEyIDE2QzEwLjM0IDE2IDkgMTcuMzQgOSAxOUg3QzcgMTYuMjQgOS4yNCAxNCAxMiAxNEMxNC43NiAxNCAxNyAxNi4yNCAxNyAxOUgxNUMxNSAxNy4zNCAxMy42NiAxNiAxMiAxNloiIGZpbGw9IiM5Y2EzYWYiLz4KPC9zdmc+";
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-base mb-1 truncate notranslate" translate="no">{item.name}</h3>
+                    <p className="text-sm text-muted-foreground truncate notranslate" translate="no">{item.developer}</p>
+                  </div>
+                </div>
+
+                {/* Rating and Stats */}
+                <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span>{item.rating}</span>
+                    </div>
+                    <span>{item.downloads}</span>
+                  </div>
+                  <span>{item.version}</span>
+                </div>
+
+                {/* Tags */}
+                {item.tags && item.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-0">
+                    {item.tags.slice(0, 2).map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs px-2 py-0">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {item.tags.length > 2 && (
+                      <span className="text-xs text-muted-foreground">
+                        +{item.tags.length - 2}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+
+              {/* Download Section */}
+              <CardFooter className="w-full bg-[#84CC9A] border-t border-gray-300 px-4 py-2">
+                <div className="flex flex-col items-start space-y-1 w-full">
+                  {/* Download Button */}
+                  <div className="w-full">
+                    {item.status === "published" ? (
+                      <Button
+                        size="sm"
+                        className="h-6 px-3 text-xs bg-green-700 hover:bg-green-800 text-white flex items-center gap-1 whitespace-nowrap min-w-[120px] justify-start"
+                        onClick={() => {
+                          if (item.storeUrl) {
+                            window.open(item.storeUrl, '_blank');
+                          }
+                        }}
+                      >
+                        <Download className="h-3 w-3" />
+                        Download
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="h-6 px-3 text-xs bg-gray-500 text-white flex items-center gap-1 min-w-[120px] justify-start"
+                        disabled
+                      >
+                        Coming soon
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Store Badge */}
+                  <div className="h-6">
+                    <Image
+                      src={item.store === "google-play" ? "/google-play-badge.png" : "/app-store-badge.png"}
+                      alt="스토어 배지"
+                      width={100}
+                      height={24}
+                      className="h-6 object-contain"
+                    />
+                  </div>
+                </div>
+              </CardFooter>
             </Card>
           ))
         )}
