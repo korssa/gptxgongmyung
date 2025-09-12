@@ -125,6 +125,7 @@ export async function POST(request: NextRequest) {
       const author = formData.get('author') as string;
       const tags = formData.get('tags') as string;
       const isPublished = formData.get('isPublished') === 'true';
+      const status = formData.get('status') as 'published' | 'development' | 'in-review' | null;
       const store = formData.get('store') as 'google-play' | 'app-store' | null;
       const storeUrl = formData.get('storeUrl') as string | null;
       const appCategory = formData.get('appCategory') as string | null;
@@ -160,6 +161,7 @@ export async function POST(request: NextRequest) {
         publishDate: new Date().toISOString(),
         tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
         isPublished,
+        status: status || (isPublished ? 'published' : 'development'), // status가 없으면 isPublished에 따라 설정
         type,
         store: store || 'google-play', // 기본값으로 구글플레이 설정
         storeUrl: storeUrl || undefined,
@@ -206,11 +208,14 @@ export async function PUT(request: NextRequest) {
 
     // Vercel Blob에서 해당 타입의 폴더 조회
     // type별로 해당하는 폴더만 조회 (appCategory별 분리)
-    const folderPaths = new Set([`gallery-${type}`]);
-    if (type === 'featured') {
-      folderPaths.add(`gallery-featured`);
+    const folderPaths = new Set();
+    if (type === 'gallery' || type === 'normal') {
+      folderPaths.add('gallery-gallery');
+      folderPaths.add('gallery-normal'); // 기존 데이터 호환성을 위해
+    } else if (type === 'featured') {
+      folderPaths.add('gallery-featured');
     } else if (type === 'events') {
-      folderPaths.add(`gallery-events`);
+      folderPaths.add('gallery-events');
     }
     
     const allBlobs = [];
@@ -268,11 +273,14 @@ export async function DELETE(request: NextRequest) {
 
     // Vercel Blob에서 해당 타입의 폴더 조회
     // type별로 해당하는 폴더만 조회 (appCategory별 분리)
-    const folderPaths = new Set([`gallery-${type}`]);
-    if (type === 'featured') {
-      folderPaths.add(`gallery-featured`);
+    const folderPaths = new Set();
+    if (type === 'gallery' || type === 'normal') {
+      folderPaths.add('gallery-gallery');
+      folderPaths.add('gallery-normal'); // 기존 데이터 호환성을 위해
+    } else if (type === 'featured') {
+      folderPaths.add('gallery-featured');
     } else if (type === 'events') {
-      folderPaths.add(`gallery-events`);
+      folderPaths.add('gallery-events');
     }
     
     const allBlobs = [];
@@ -312,5 +320,3 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: '갤러리 삭제 실패' }, { status: 500 });
   }
 }
-
-
