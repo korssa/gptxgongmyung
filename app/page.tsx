@@ -263,13 +263,12 @@ function HomeContent() {
    // New Release 앱을 가져오는 별도 함수
   const getLatestApp = useCallback(() => {
     try {
-      // allApps에서 가장 최근 퍼블리시한 앱 가져오기
-      const publishedApps = allApps
-        .filter(app => app.status === "published")
+      // allApps에서 가장 최근에 업로드된 앱 가져오기 (상태 무관)
+      const latestApps = allApps
         .sort((a, b) => 
           new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
         );
-        return publishedApps[0] || null; // 가장 최근 퍼블리시한 앱 1개만 반환
+        return latestApps[0] || null; // 가장 최근에 업로드된 앱 1개만 반환
     } catch (error) {
       console.error('최신 앱 조회 실패:', error);
       return null;
