@@ -174,8 +174,18 @@ export function GalleryManager({
 
                 {/* 상태 배지 */}
                 <div className="absolute bottom-2 left-2">
-                  <Badge className="bg-green-500 text-white text-xs">
-                    {item.appCategory || item.type}
+                  <Badge className={`text-white text-xs ${
+                    item.isPublished 
+                      ? 'bg-green-500' 
+                      : item.status === 'in-review' 
+                        ? 'bg-orange-500' 
+                        : 'bg-gray-500'
+                  }`}>
+                    {item.isPublished 
+                      ? 'published' 
+                      : item.status === 'in-review' 
+                        ? 'review' 
+                        : 'draft'}
                   </Badge>
                 </div>
 
