@@ -53,7 +53,7 @@ export function GalleryManager({
       const response = await fetch(`/api/gallery?type=${type}`);
       if (response.ok) {
         const data = await response.json();
-        if (type === "gallery") {
+        if (type === "gallery" || type === "normal") {
           setItems(
             data.filter(
               (item: GalleryItem) =>
