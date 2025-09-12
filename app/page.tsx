@@ -61,25 +61,7 @@ function HomeContent() {
   const { t } = useLanguage();
   const { isAuthenticated: isAdmin } = useAdmin();
   const [adminVisible, setAdminVisible] = useState(false);
-  const [latestApp, setLatestApp] = useState<{
-    id: string;
-    title: string;
-    content: string;
-    author: string;
-    imageUrl?: string;
-    screenshotUrls?: string[];
-    publishDate: string;
-    isPublished: boolean;
-    status?: string;
-    name?: string;
-    rating?: number;
-    downloads?: string;
-    version?: string;
-    tags?: string[];
-    storeUrl?: string;
-    isEvent?: boolean;
-    store?: string;
-  } | null>(null);
+  const [latestApp, setLatestApp] = useState<AppItem | null>(null);
   const searchParams = useSearchParams();
 
   // URL 쿼리 파라미터 처리 - 홈 버튼 클릭 시 도메인으로 이동
@@ -114,14 +96,13 @@ function HomeContent() {
     );
   };
 
-  // 최신 앱 로드
+  // 최신 앱 로드 - allApps가 로드된 후 실행
   useEffect(() => {
-    const loadLatestApp = async () => {
-      const app = await getLatestApp();
-      setLatestApp(app);
-    };
-    loadLatestApp();
-  }, []);
+    if (allApps.length > 0) {
+      const latestApp = getLatestApp();
+      setLatestApp(latestApp);
+    }
+  }, [allApps]);
 
   // Request ID for preventing race conditions
   const reqIdRef = useRef(0);
@@ -288,23 +269,19 @@ function HomeContent() {
 
 
    // New Release 앱을 가져오는 별도 함수
-  const getLatestApp = async () => {
+  const getLatestApp = () => {
     try {
-      // 갤러리에서 가장 최근 퍼블리시한 카드 가져오기
-      const response = await fetch('/api/gallery?type=normal');
-      if (response.ok) {
-        const galleryItems = await response.json();
-        const publishedItems = galleryItems
-          .filter((item: { isPublished: boolean; status?: string }) => item.isPublished || item.status === 'published')
-          .sort((a: { publishDate: string }, b: { publishDate: string }) => 
-            new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
-          );
-        return publishedItems[0]; // 가장 최근 퍼블리시한 카드 1개만 반환
-      }
+      // allApps에서 가장 최근 퍼블리시한 앱 가져오기
+      const publishedApps = allApps
+        .filter(app => app.status === "published")
+        .sort((a, b) => 
+          new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
+        );
+        return publishedApps[0] || null; // 가장 최근 퍼블리시한 앱 1개만 반환
     } catch (error) {
       console.error('최신 앱 조회 실패:', error);
+      return null;
     }
-    return null;
   };
 
   const handleAppUpload = async (data: AppFormData, files: { icon: File; screenshots: File[] }) => {
@@ -868,7 +845,7 @@ function HomeContent() {
                           {latestApp.screenshotUrls && latestApp.screenshotUrls.length > 0 ? (
                                                          <Image
                                src={latestApp.screenshotUrls[0]}
-                               alt={latestApp.title}
+                               alt={latestApp.name}
                                fill
                                unoptimized={isBlobUrl(latestApp.screenshotUrls[0])}
                                className="object-cover object-center"
@@ -892,11 +869,11 @@ function HomeContent() {
                        {/* App Icon and Basic Info */}
                        <div className="flex items-start space-x-3 mb-2">
                                                    <Image
-                             src={latestApp.imageUrl || "/icon-192x192.png"}
-                            alt={latestApp.title}
+                            src={latestApp.iconUrl || "/icon-192x192.png"}
+                            alt={latestApp.name}
                             width={48}
                             height={48}
-                            unoptimized={isBlobUrl(latestApp.imageUrl || "/icon-192x192.png")}
+                            unoptimized={isBlobUrl(latestApp.iconUrl || "/icon-192x192.png")}
                             className="w-12 h-12 rounded-xl object-cover object-center flex-shrink-0"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
@@ -904,8 +881,8 @@ function HomeContent() {
                             }}
                           />
                          <div className="flex-1 min-w-0">
-                           <h3 className="font-medium text-sm mb-1 truncate notranslate" translate="no">{latestApp.title}</h3>
-                           <p className="text-xs text-muted-foreground truncate notranslate" translate="no">{latestApp.author}</p>
+                           <h3 className="font-medium text-sm mb-1 truncate notranslate" translate="no">{latestApp.name}</h3>
+                           <p className="text-xs text-muted-foreground truncate notranslate" translate="no">{latestApp.developer}</p>
                          </div>
                        </div>
 
