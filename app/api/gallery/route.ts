@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
 
     // 타입별 필터링
     let filteredItems: GalleryItem[];
-    if (type === 'gallery') {
+    if (type === 'gallery' || type === 'normal') {
       // All apps에서는 review와 published 상태의 카드들을 모두 표시
       filteredItems = items.filter(item => 
         (item.isPublished || item.status === 'in-review' || item.status === 'published')
@@ -308,3 +308,4 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: '갤러리 삭제 실패' }, { status: 500 });
   }
 }
+
