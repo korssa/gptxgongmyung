@@ -263,12 +263,8 @@ function HomeContent() {
    // New Release 앱을 가져오는 별도 함수
   const getLatestApp = useCallback(() => {
     try {
-      // allApps에서 가장 최근에 업로드된 앱 가져오기 (상태 무관)
-      const latestApps = allApps
-        .sort((a, b) => 
-          new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
-        );
-        return latestApps[0] || null; // 가장 최근에 업로드된 앱 1개만 반환
+      // allApps 배열에서 마지막에 추가된 앱 가져오기 (인덱스 순서)
+      return allApps.length > 0 ? allApps[allApps.length - 1] : null;
     } catch (error) {
       console.error('최신 앱 조회 실패:', error);
       return null;
@@ -305,7 +301,7 @@ function HomeContent() {
         downloads: data.downloads,
         views: 0,
         likes: 0,
-        uploadDate: new Date().toISOString().split('T')[0],
+        uploadDate: new Date().toISOString(),
         tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
         storeUrl: data.storeUrl || undefined,
         version: data.version,
