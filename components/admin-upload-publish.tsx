@@ -192,6 +192,7 @@ export function AdminUploadPublishDialog({ onUpload, buttonProps, buttonText = "
       formDataToSend.append("author", formData.developer);
       formDataToSend.append("tags", formData.tags || "");
       formDataToSend.append("isPublished", "false"); // 리뷰 상태이므로 false
+      formDataToSend.append("status", "in-review"); // 리뷰 상태 명시
       formDataToSend.append("file", iconFile);
       formDataToSend.append("store", formData.store || "google-play");
       formDataToSend.append("storeUrl", formData.storeUrl || "");
