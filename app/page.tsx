@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 declare global {
@@ -95,14 +95,6 @@ function HomeContent() {
         : [...prev, appId]
     );
   };
-
-  // 최신 앱 로드 - allApps가 로드된 후 실행
-  useEffect(() => {
-    if (allApps.length > 0) {
-      const latestApp = getLatestApp();
-      setLatestApp(latestApp);
-    }
-  }, [allApps]);
 
   // Request ID for preventing race conditions
   const reqIdRef = useRef(0);
@@ -269,7 +261,7 @@ function HomeContent() {
 
 
    // New Release 앱을 가져오는 별도 함수
-  const getLatestApp = () => {
+  const getLatestApp = useCallback(() => {
     try {
       // allApps에서 가장 최근 퍼블리시한 앱 가져오기
       const publishedApps = allApps
@@ -282,7 +274,15 @@ function HomeContent() {
       console.error('최신 앱 조회 실패:', error);
       return null;
     }
-  };
+  }, [allApps]);
+
+  // 최신 앱 로드 - allApps가 로드된 후 실행
+  useEffect(() => {
+    if (allApps.length > 0) {
+      const latestApp = getLatestApp();
+      setLatestApp(latestApp);
+    }
+  }, [allApps, getLatestApp]);
 
   const handleAppUpload = async (data: AppFormData, files: { icon: File; screenshots: File[] }) => {
     try {
