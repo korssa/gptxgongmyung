@@ -885,11 +885,11 @@ function HomeContent() {
                        {/* App Icon and Basic Info */}
                        <div className="flex items-start space-x-3 mb-2">
                                                    <Image
-                            src={latestApp.iconUrl}
+                             src={latestApp.imageUrl || "/icon-192x192.png"}
                             alt={latestApp.title}
                             width={48}
                             height={48}
-                            unoptimized={isBlobUrl(latestApp.iconUrl)}
+                            unoptimized={isBlobUrl(latestApp.imageUrl || "/icon-192x192.png")}
                             className="w-12 h-12 rounded-xl object-cover object-center flex-shrink-0"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
