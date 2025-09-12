@@ -29,11 +29,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Vercel Blob에서 해당 타입의 폴더 조회
-    const folderPaths = new Set([`gallery-${type}`]);
-    if (type === 'featured') {
-      folderPaths.add(`gallery-featured`);
+    const folderPaths = new Set();
+    if (type === 'gallery' || type === 'normal') {
+      folderPaths.add('gallery-gallery');
+      folderPaths.add('gallery-normal'); // 기존 데이터 호환성을 위해
+    } else if (type === 'featured') {
+      folderPaths.add('gallery-featured');
     } else if (type === 'events') {
-      folderPaths.add(`gallery-events`);
+      folderPaths.add('gallery-events');
     }
     
     const allBlobs = [];
@@ -78,6 +81,7 @@ export async function GET(request: NextRequest) {
         item.isPublished
       );
     }
+    
     
     return NextResponse.json(filteredItems);
 
@@ -308,4 +312,5 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: '갤러리 삭제 실패' }, { status: 500 });
   }
 }
+
 
