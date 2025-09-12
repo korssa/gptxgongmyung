@@ -48,6 +48,36 @@ const applyFeaturedFlags = (apps: AppItem[], featuredIds: string[], eventIds: st
   return apps.map(a => ({ ...a, isFeatured: f.has(a.id), isEvent: e.has(a.id) }));
 };
 
+// 앱 데이터 정제 함수 - 필수 필드들이 누락되지 않도록 보장
+const sanitizeApp = (app: Partial<AppItem>): AppItem => {
+  return {
+    id: app.id!,
+    name: app.name || "(No Title)",
+    developer: app.developer || "(No Developer)",
+    description: app.description || "",
+    iconUrl: (app.iconUrl && typeof app.iconUrl === 'string' && !app.iconUrl.includes('null')) 
+      ? app.iconUrl 
+      : "/icon-192x192.png",
+    screenshotUrls: app.screenshotUrls || [],
+    store: app.store || "google-play",
+    status: app.status || "published",
+    rating: app.rating ?? 0,
+    downloads: app.downloads || "0",
+    views: app.views ?? 0,
+    likes: app.likes ?? 0,
+    uploadDate: app.uploadDate || new Date().toISOString(),
+    tags: app.tags || [],
+    storeUrl: app.storeUrl || "",
+    version: app.version || "1.0.0",
+    size: app.size || "10MB",
+    category: app.category || "Other",
+    type: "gallery",
+    isFeatured: app.isFeatured,
+    isEvent: app.isEvent,
+    appCategory: app.appCategory ?? "normal",
+  };
+};
+
 // 빈 앱 데이터 (샘플 앱 제거됨)
 const sampleApps: AppItem[] = [];
 
@@ -117,12 +147,7 @@ function HomeContent() {
     // Type filter using global store
     switch (currentFilter) {
       case "latest":
-        const latestApps = filtered
-          .filter(app => app.status === "published")
-          .sort((a, b) => 
-            new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
-          );
-        return latestApps.slice(0, 1); // 가장 최근 published 앱 1개만 반환
+        return []; // 빈 배열 반환하여 GalleryManager에서 무시되도록 함 (latestApp이 별도 처리)
       case "featured": {
         return allApps.filter(app => featuredIds.includes(app.id)).sort((a, b) => a.name.localeCompare(b.name));
       }
@@ -236,9 +261,9 @@ function HomeContent() {
           loadEventIds()
         ]);
         
-        // 4. 앱들에 플래그 적용
+        // 4. 앱들에 플래그 적용 및 데이터 정제
         const appsWithFlags = applyFeaturedFlags(validatedApps, featuredIds, eventIds);
-        const appsWithType = appsWithFlags.map(app => ({ ...app, type: 'gallery' as const }));
+        const appsWithType = appsWithFlags.map(app => sanitizeApp({ ...app, type: 'gallery' as const }));
         
         
         // 5. 전역 스토어 업데이트
@@ -263,8 +288,13 @@ function HomeContent() {
    // New Release 앱을 가져오는 별도 함수
   const getLatestApp = useCallback(() => {
     try {
-      // allApps 배열에서 마지막에 추가된 앱 가져오기 (인덱스 순서)
-      return allApps.length > 0 ? allApps[allApps.length - 1] : null;
+      // 퍼블리시된 앱들 중에서 uploadDate 기준으로 최신 앱 가져오기
+      const publishedApps = allApps
+        .filter(app => app.status === "published")
+        .sort((a, b) => 
+          new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
+        );
+      return publishedApps[0] || null;
     } catch (error) {
       console.error('최신 앱 조회 실패:', error);
       return null;
@@ -287,8 +317,8 @@ function HomeContent() {
         files.screenshots.map(file => uploadFile(file, "screenshot"))
       );
 
-      // 새 앱 아이템 생성
-      const newApp: AppItem = {
+      // 새 앱 아이템 생성 (sanitizeApp으로 필수 필드 보장)
+      const newApp: AppItem = sanitizeApp({
         id: generateUniqueId(),
         name: data.name,
         developer: data.developer,
@@ -308,7 +338,7 @@ function HomeContent() {
         size: data.size,
         category: data.category,
         type: 'gallery', // 갤러리 앱 타입 명시
-      };
+      });
 
       // 통합된 저장 및 상태 업데이트 (기존 데이터 보존)
       // 1. 기존 앱 데이터 로드 (오버라이트 방지)
@@ -632,21 +662,22 @@ function HomeContent() {
       const appIndex = allApps.findIndex(app => app.id === appId);
       if (appIndex === -1) return;
 
-      const updatedApp = { ...allApps[appIndex] };
-
-      // 기본 정보 업데이트
-      updatedApp.name = data.name;
-      updatedApp.developer = data.developer;
-      updatedApp.description = data.description;
-      updatedApp.store = data.store;
-      updatedApp.status = data.status;
-      updatedApp.rating = data.rating;
-      updatedApp.downloads = data.downloads;
-      updatedApp.version = data.version;
-      updatedApp.size = data.size;
-      updatedApp.category = data.category;
-      updatedApp.storeUrl = data.storeUrl || undefined;
-      updatedApp.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
+      // 기본 정보 업데이트 (sanitizeApp으로 필수 필드 보장)
+      const updatedApp = sanitizeApp({
+        ...allApps[appIndex],
+        name: data.name,
+        developer: data.developer,
+        description: data.description,
+        store: data.store,
+        status: data.status,
+        rating: data.rating,
+        downloads: data.downloads,
+        version: data.version,
+        size: data.size,
+        category: data.category,
+        storeUrl: data.storeUrl || undefined,
+        tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+      });
 
       // 새 아이콘이 있으면 업데이트 (글로벌 저장소 사용)
       if (files?.icon) {
