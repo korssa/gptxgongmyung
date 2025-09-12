@@ -9,7 +9,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Trash2, Edit } from "lucide-react";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
-import { AdminUploadDialog } from "./admin-upload-dialog";
 import { AdminFeaturedUploadDialog } from "./admin-featured-upload-dialog";
 import { AdminEventsUploadDialog } from "./admin-events-upload-dialog";
 
@@ -46,7 +45,6 @@ export function GalleryManager({
 }: GalleryManagerProps) {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [likes, setLikes] = useState<{ [key: string]: number }>({});
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
@@ -96,11 +94,6 @@ export function GalleryManager({
         }
       }
     })();
-  };
-
-  const handleUploadSuccess = () => {
-    loadItems();
-    setIsUploadDialogOpen(false);
   };
 
   const totalPages = Math.ceil(items.length / itemsPerPage);
@@ -156,7 +149,7 @@ export function GalleryManager({
             </div>
           )
         ) : (
-          currentItems.map((item, index) => (
+          currentItems.map((item) => (
             <Card
               key={item.id}
               className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
@@ -262,28 +255,22 @@ export function GalleryManager({
         </div>
       )}
 
-      {/* 업로드 다이얼로그 */}
+      {/* 업로드 다이얼로그 → Upload 버튼이 없으니 자동 열리는 일도 없음 */}
       {isAdmin && (
         <>
-          {type === "featured" ? (
+          {type === "featured" && (
             <AdminFeaturedUploadDialog
-              isOpen={isUploadDialogOpen}
-              onClose={() => setIsUploadDialogOpen(false)}
-              onUploadSuccess={handleUploadSuccess}
+              isOpen={false}
+              onClose={() => {}}
+              onUploadSuccess={loadItems}
               targetGallery={type}
             />
-          ) : type === "events" ? (
+          )}
+          {type === "events" && (
             <AdminEventsUploadDialog
-              isOpen={isUploadDialogOpen}
-              onClose={() => setIsUploadDialogOpen(false)}
-              onUploadSuccess={handleUploadSuccess}
-              targetGallery={type}
-            />
-          ) : (
-            <AdminUploadDialog
-              isOpen={isUploadDialogOpen}
-              onClose={() => setIsUploadDialogOpen(false)}
-              onUploadSuccess={handleUploadSuccess}
+              isOpen={false}
+              onClose={() => {}}
+              onUploadSuccess={loadItems}
               targetGallery={type}
             />
           )}
