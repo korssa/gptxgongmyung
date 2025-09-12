@@ -74,7 +74,6 @@ const sanitizeApp = (app: Partial<AppItem>): AppItem => {
     type: "gallery",
     isFeatured: app.isFeatured,
     isEvent: app.isEvent,
-    appCategory: app.appCategory ?? "normal",
   };
 };
 
