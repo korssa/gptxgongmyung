@@ -61,6 +61,7 @@ function HomeContent() {
   const { t } = useLanguage();
   const { isAuthenticated: isAdmin } = useAdmin();
   const [adminVisible, setAdminVisible] = useState(false);
+  const [latestApp, setLatestApp] = useState<any>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -95,6 +96,15 @@ function HomeContent() {
         : [...prev, appId]
     );
   };
+
+  // 최신 앱 로드
+  useEffect(() => {
+    const loadLatestApp = async () => {
+      const app = await getLatestApp();
+      setLatestApp(app);
+    };
+    loadLatestApp();
+  }, []);
 
   // Request ID for preventing race conditions
   const reqIdRef = useRef(0);
@@ -261,14 +271,24 @@ function HomeContent() {
 
 
    // New Release 앱을 가져오는 별도 함수
-   const getLatestApp = () => {
-     const latestApps = allApps
-       .filter(app => app.status === "published")
-       .sort((a, b) => 
-         new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
-       );
-     return latestApps[0]; // 가장 최근 published 앱 1개만 반환
-   };
+  const getLatestApp = async () => {
+    try {
+      // 갤러리에서 가장 최근 퍼블리시한 카드 가져오기
+      const response = await fetch('/api/gallery?type=normal');
+      if (response.ok) {
+        const galleryItems = await response.json();
+        const publishedItems = galleryItems
+          .filter((item: any) => item.isPublished || item.status === 'published')
+          .sort((a: any, b: any) => 
+            new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+          );
+        return publishedItems[0]; // 가장 최근 퍼블리시한 카드 1개만 반환
+      }
+    } catch (error) {
+      console.error('최신 앱 조회 실패:', error);
+    }
+    return null;
+  };
 
   const handleAppUpload = async (data: AppFormData, files: { icon: File; screenshots: File[] }) => {
     try {
@@ -810,11 +830,7 @@ function HomeContent() {
 
 
                             {/* New Releases 특별 섹션 */}
-         {currentFilter === "latest" && (() => {
-           const latestApp = getLatestApp();
-           if (!latestApp) return null;
-            
-            return (
+         {currentFilter === "latest" && latestApp && (
             <div className="mb-12">
                              <div className="text-center mb-8">
                  <h3 className="text-3xl font-bold text-amber-400 mb-2 notranslate" translate="no">NEW RELEASE</h3>
@@ -954,8 +970,7 @@ function HomeContent() {
                  </div>
                </div>
              </div>
-           );
-         })()}
+         )}
 
                    {/* 콘텐츠 타입에 따른 조건부 렌더링 */}
                    {currentContentType ? (
@@ -1258,7 +1273,7 @@ function HomeContent() {
     size: "lg",
     className: "bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg font-medium rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
   }}
-  buttonText="📱 새 앱 업로드"
+  buttonText="🚀 퍼블리시"
 />
 
 <AdminUploadPublishDialog
