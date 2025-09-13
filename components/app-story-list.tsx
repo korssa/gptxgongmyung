@@ -40,6 +40,9 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingContent, setEditingContent] = useState<ContentItem | null>(null);
+  // Pagination state (5 items per page)
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   const [formData, setFormData] = useState<ContentFormData>({
     title: "",
     content: "",
@@ -84,7 +87,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type]);
+  }, [type, isAuthenticated]);
 
       // 폼 변경 즉시 저장
     useEffect(() => {
@@ -123,6 +126,8 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       }
     };
     load();
+    // 타입 변경 시 첫 페이지로 이동
+    setCurrentPage(1);
 
     // 번역 피드백 차단 함수
     const blockTranslationFeedback = () => {
@@ -162,6 +167,12 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
 
     return () => observer.disconnect();
   }, [type]);
+
+  // contents 변경 시 현재 페이지가 총 페이지 수를 넘지 않도록 보정
+  useEffect(() => {
+    const total = Math.max(1, Math.ceil(contents.length / itemsPerPage));
+    if (currentPage > total) setCurrentPage(total);
+  }, [contents, currentPage]);
 
   // 폼 초기화
   const resetForm = () => {
@@ -252,6 +263,8 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
             const data = await res.json();
             // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
             setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
+            // 저장 후 첫 페이지로
+            setCurrentPage(1);
           }
               } catch (error) {
         // 목록 새로고침 실패
@@ -286,7 +299,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       });
 
       if (response.ok) {
-(`✅ ${type} 삭제 완료: ${id}`);
+        console.log(`✅ ${type} 삭제 완료: ${id}`);
         // 콘텐츠 목록 다시 로드 (타입별로 정확히 필터링)
         try {
           const res = await fetch(`/api/content?type=${type}`);
@@ -294,6 +307,9 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
             const data = await res.json();
             // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
             setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
+            // 삭제 후 페이지 범위 보정
+            const total = Math.max(1, Math.ceil(Math.max(0, (isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished)).length) / itemsPerPage));
+            setCurrentPage((prev) => Math.min(prev, total));
           }
         } catch (error) {
           console.error('삭제 후 목록 새로고침 실패:', error);
@@ -304,6 +320,19 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
     } catch {
       // 삭제 실패
     }
+  };
+
+  // 페이지네이션 계산 및 핸들러
+  const totalPages = Math.max(1, Math.ceil(contents.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentItems = contents.slice(startIndex, endIndex);
+  const handlePageChange = (page: number) => {
+    const next = Math.max(1, Math.min(page, totalPages));
+    setCurrentPage(next);
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   };
 
   // 편집 모드 시작
@@ -791,7 +820,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {contents.map((content) => (
+        {currentItems.map((content) => (
                      <Card
              key={content.id}
              className="bg-gray-800/50 border-2 border-gray-700 hover:border-amber-400/70 hover:bg-gray-800/80 transition-all duration-300 cursor-pointer group"
@@ -861,6 +890,58 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
           </Card>
         ))}
       </div>
+
+      {/* 페이지네이션 - 5개 초과일 때만 표시 */}
+      {contents.length > itemsPerPage && (
+        <div className="flex justify-center items-center space-x-2 mt-8">
+          {/* 이전 페이지 */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ←
+          </Button>
+
+          {/* 페이지 번호 */}
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <Button
+              key={page}
+              variant={currentPage === page ? "default" : "outline"}
+              size="sm"
+              onClick={() => handlePageChange(page)}
+              className={
+                currentPage === page
+                  ? "bg-amber-500 text-black hover:bg-amber-400"
+                  : "bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+              }
+            >
+              {page}
+            </Button>
+          ))}
+
+          {/* 다음 페이지 */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            →
+          </Button>
+        </div>
+      )}
+
+      {/* 페이지 정보 */}
+      {contents.length > 0 && (
+        <div className="text-center text-gray-400 text-sm mt-4" onMouseEnter={blockTranslationFeedback}>
+          {startIndex + 1}-{Math.min(endIndex, contents.length)} of {contents.length} items
+        </div>
+      )}
     </div>
   );
 }
+
