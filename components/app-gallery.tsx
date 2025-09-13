@@ -25,10 +25,6 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<AppStore>("google-play");
   const [apps, setApps] = useState<AppItem[]>(initialApps);
-  
-  // 페이지네이션 상태
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
 
   // initialApps가 변경될 때마다 업데이트
   useEffect(() => {
@@ -45,24 +41,10 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
   const googlePlayApps = apps.filter(app => app.store === "google-play");
   const appStoreApps = apps.filter(app => app.store === "app-store");
 
-  // 탭 변경 시 페이지 리셋
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [activeTab]);
-
-  // 활성 탭 기준 페이지네이션 계산
+  // 활성 탭 리스트
   const activeAppsList = activeTab === "google-play" ? googlePlayApps : appStoreApps;
-  const totalPages = Math.ceil(activeAppsList.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentApps = activeAppsList.slice(startIndex, endIndex);
 
-  // 페이지 변경 핸들러
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    // 페이지 상단으로 스크롤
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  // 가로 스크롤 버전에서는 페이지네이션 제거
 
   if (apps.length === 0) {
     return (
@@ -89,7 +71,7 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
       );
     }
 
-    if (viewMode === "list") {
+  if (viewMode === "list") {
       return (
         <div className="space-y-4">
           {appsToRender.map((app, index) => (
@@ -119,9 +101,9 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
     }
 
     return (
-      <div className="grid grid-cols-1 gap-6 justify-items-center">
+      <div className="flex flex-row gap-4 overflow-x-auto py-4 px-2">
         {appsToRender.map((app, index) => (
-          <div key={app.id} className="relative mx-auto">
+          <div key={app.id} className="relative">
             {showNumbering && (
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 event-number text-black font-bold text-2xl w-16 h-16 rounded-full flex items-center justify-center">
                 {index + 1}
@@ -129,7 +111,7 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
             )}
             <AppCard 
               app={app} 
-              viewMode="grid" 
+              viewMode="mini" 
               onDelete={onDeleteApp}
               onEdit={onEditApp}
               onToggleFeatured={onToggleFeatured}
@@ -161,63 +143,15 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
         </div>
 
         <TabsContent value="google-play" className="mt-0">
-          {renderAppGrid(activeTab === "google-play" ? currentApps : googlePlayApps)}
+          {renderAppGrid(activeAppsList)}
         </TabsContent>
 
         <TabsContent value="app-store" className="mt-0">
-          {renderAppGrid(activeTab === "app-store" ? currentApps : appStoreApps)}
+          {renderAppGrid(activeAppsList)}
         </TabsContent>
       </Tabs>
 
-      {/* 페이지네이션 - 6개 이상일 때만 표시 */}
-      {activeAppsList.length > itemsPerPage && (
-        <div className="flex justify-center items-center space-x-2 mt-8">
-          {/* 이전 페이지 버튼 */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
-          >
-            ←
-          </Button>
-
-          {/* 페이지 번호들 */}
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <Button
-              key={page}
-              variant={currentPage === page ? "default" : "outline"}
-              size="sm"
-              onClick={() => handlePageChange(page)}
-              className={currentPage === page 
-                ? "bg-amber-500 text-black hover:bg-amber-400" 
-                : "bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
-              }
-            >
-              {page}
-            </Button>
-          ))}
-
-          {/* 다음 페이지 버튼 */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
-          >
-            →
-          </Button>
-        </div>
-      )}
-
-      {/* 페이지 정보 */}
-      {activeAppsList.length > 0 && (
-        <div className="text-center text-gray-400 text-sm mt-4" onMouseEnter={blockTranslationFeedback}>
-          {startIndex + 1}-{Math.min(endIndex, activeAppsList.length)} of {activeAppsList.length} items
-        </div>
-      )}
+      {/* 가로 스크롤 버전: 페이지네이션/페이지 정보 제거 */}
     </div>
   );
 }
