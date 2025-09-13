@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,7 +35,7 @@ export function GalleryManager({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
-  const loadItems = async () => {
+  const loadItems = useCallback(async () => {
     try {
       const response = await fetch(`/api/gallery?type=${type}`);
       if (response.ok) {
@@ -53,14 +53,26 @@ export function GalleryManager({
           setItems(data.filter((item: AppItem) => item.status === "published"));
         }
       }
-    } catch (error) {}
-  };
+    } catch (_error) {
+      // noop
+    }
+  }, [type]);
 
   useEffect(() => {
     loadItems();
     const savedLikes = localStorage.getItem(`gallery-likes-${type}`);
     if (savedLikes) setLikes(JSON.parse(savedLikes));
-  }, [type]);
+  // 타입 변경 시 첫 페이지로 리셋
+  setCurrentPage(1);
+  }, [type, loadItems]);
+
+  // items가 변경되면 현재 페이지가 총 페이지 수를 넘지 않도록 보정
+  useEffect(() => {
+    const total = Math.max(1, Math.ceil(items.length / itemsPerPage));
+    if (currentPage > total) {
+      setCurrentPage(total);
+    }
+  }, [items, currentPage]);
 
   const handleDelete = (itemId: string) => {
     createAdminButtonHandler(async () => {
@@ -89,7 +101,9 @@ export function GalleryManager({
   const currentItems = items.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    const total = Math.max(1, Math.ceil(items.length / itemsPerPage));
+    const next = Math.max(1, Math.min(page, total));
+    setCurrentPage(next);
     requestAnimationFrame(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
@@ -151,7 +165,8 @@ export function GalleryManager({
                       src={item.screenshotUrls[0]}
                       alt={item.name}
                       fill
-                      unoptimized={item.screenshotUrls[0].includes('vercel-storage.com') || item.screenshotUrls[0].includes('blob.vercel-storage.com')}
+                      // 원격 도메인 허용 목록 문제로 크래시를 방지하기 위해 최적화를 비활성화
+                      unoptimized
                       className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
                     />
                   ) : (
@@ -207,7 +222,8 @@ export function GalleryManager({
                     alt={item.name}
                     width={48}
                     height={48}
-                    unoptimized={item.iconUrl.includes('vercel-storage.com') || item.iconUrl.includes('blob.vercel-storage.com')}
+                    // 원격 도메인 허용 목록 문제로 크래시를 방지하기 위해 최적화를 비활성화
+                    unoptimized
                     className="w-12 h-12 rounded-xl object-cover object-center flex-shrink-0"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
