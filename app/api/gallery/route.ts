@@ -16,6 +16,23 @@ export interface GalleryItem {
   storeUrl?: string; // 스토어 URL 추가
   appCategory?: 'normal' | 'featured' | 'events'; // 앱 카테고리 추가
   status?: 'published' | 'development' | 'in-review'; // 앱 상태 추가
+  // AppItem과 호환성을 위한 추가 필드들
+  name?: string; // title과 동일
+  developer?: string; // author와 동일
+  description?: string; // content와 동일
+  iconUrl?: string; // imageUrl과 동일
+  screenshotUrls?: string[]; // imageUrl을 배열로
+  rating?: number;
+  downloads?: string;
+  version?: string;
+  size?: string;
+  category?: string;
+  views?: number;
+  likes?: number;
+  uploadDate?: string; // publishDate와 동일
+  isFeatured?: boolean;
+  isEvent?: boolean;
+  adminStoreUrl?: string;
 }
 
 // GET: 갤러리 아이템 목록 조회
@@ -39,7 +56,7 @@ export async function GET(request: NextRequest) {
       folderPaths.add('gallery-events');
     }
     
-    const allBlobs = [];
+  const allBlobs = [] as Array<Awaited<ReturnType<typeof list>>['blobs'][number]>;
     for (const folderPath of folderPaths) {
       const { blobs } = await list({
         prefix: `${folderPath}/`,
@@ -50,21 +67,95 @@ export async function GET(request: NextRequest) {
     // JSON 파일들만 필터링
     const jsonFiles = allBlobs.filter(blob => blob.pathname.endsWith('.json'));
     
-    const items: GalleryItem[] = [];
+  const items: GalleryItem[] = [];
 
     // 각 JSON 파일에서 데이터 로드
     for (const jsonFile of jsonFiles) {
       try {
-        const response = await fetch(jsonFile.url);
+        // 최신 파일을 가져오기 위해 캐시를 비활성화합니다.
+        const response = await fetch(jsonFile.url, { cache: 'no-store' });
         if (response.ok) {
           const data = await response.json();
+          const pushItem = (raw: unknown) => {
+            const r = raw as Record<string, unknown>;
+            if (!r || typeof r !== 'object') return;
+            const id = typeof r.id === 'string' ? r.id : undefined;
+            if (!id) return;
+
+            const getStr = (k: string): string | undefined => (typeof r[k] === 'string' ? (r[k] as string) : undefined);
+            const getArrStr = (k: string): string[] => (Array.isArray(r[k]) ? (r[k] as unknown[]).filter(x => typeof x === 'string') as string[] : []);
+
+            const pickType = (): GalleryItem['type'] => {
+              const t = getStr('type');
+              if (t === 'gallery' || t === 'featured' || t === 'events' || t === 'normal') return t;
+              return (type || 'gallery') as GalleryItem['type'];
+            };
+
+            const pickStatus = (): NonNullable<GalleryItem['status']> => {
+              const s = getStr('status');
+              if (s === 'published' || s === 'in-review' || s === 'development') return s;
+              const isPublished = r['isPublished'] === true;
+              return isPublished ? 'published' : 'development';
+            };
+
+            const pickStore = (): NonNullable<GalleryItem['store']> => {
+              const s = getStr('store');
+              return s === 'app-store' ? 'app-store' : 'google-play';
+            };
+
+            const firstImage = getStr('imageUrl') || getStr('iconUrl') || (getArrStr('screenshotUrls')[0]);
+            const screenshots = getArrStr('screenshotUrls');
+
+            const pickCategory = (): NonNullable<GalleryItem['appCategory']> => {
+              const c = getStr('appCategory');
+              if (c === 'featured' || c === 'events' || c === 'normal') return c;
+              if (type === 'featured') return 'featured';
+              if (type === 'events') return 'events';
+              return 'normal';
+            };
+
+            const normalized: GalleryItem = {
+              id,
+              title: getStr('title') || getStr('name') || '',
+              content: getStr('content') || getStr('description') || '',
+              author: getStr('author') || getStr('developer') || '',
+              imageUrl: firstImage,
+              publishDate: getStr('publishDate') || getStr('uploadDate') || new Date().toISOString(),
+              tags: getArrStr('tags'),
+              isPublished: r['isPublished'] === true || pickStatus() === 'published',
+              type: pickType(),
+              store: pickStore(),
+              storeUrl: getStr('storeUrl'),
+              appCategory: pickCategory(),
+              status: pickStatus(),
+              name: getStr('name') || getStr('title') || '',
+              developer: getStr('developer') || getStr('author') || '',
+              description: getStr('description') || getStr('content') || '',
+              iconUrl: getStr('iconUrl') || firstImage || '',
+              screenshotUrls: screenshots.length > 0 ? screenshots : (firstImage ? [firstImage] : []),
+              rating: typeof r['rating'] === 'number' ? (r['rating'] as number) : 4.5,
+              downloads: getStr('downloads') || '1K+',
+              version: getStr('version') || '1.0.0',
+              size: getStr('size') || '50MB',
+              category: getStr('category') || '',
+              views: typeof r['views'] === 'number' ? (r['views'] as number) : 0,
+              likes: typeof r['likes'] === 'number' ? (r['likes'] as number) : 0,
+              uploadDate: getStr('uploadDate') || getStr('publishDate') || new Date().toISOString(),
+              isFeatured: r['isFeatured'] === true,
+              isEvent: r['isEvent'] === true,
+              adminStoreUrl: getStr('adminStoreUrl'),
+            };
+            items.push(normalized);
+          };
+
           if (Array.isArray(data)) {
-            items.push(...data);
-          } else if (data.id) {
-            items.push(data);
+            data.forEach(pushItem);
+          } else if (data && (data as Record<string, unknown>).id) {
+            pushItem(data);
           }
         }
-      } catch (error) {
+      } catch (_error) {
+        // ignore single file errors
       }
     }
 
@@ -81,9 +172,18 @@ export async function GET(request: NextRequest) {
         item.isPublished
       );
     }
-    
-    
-    return NextResponse.json(filteredItems);
+    // 최신순 정렬 (uploadDate/publishDate 기준)
+    filteredItems.sort((a, b) => {
+      const ad = new Date(a.uploadDate || a.publishDate || 0).getTime();
+      const bd = new Date(b.uploadDate || b.publishDate || 0).getTime();
+      return bd - ad;
+    });
+
+    return NextResponse.json(filteredItems, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, max-age=0, must-revalidate',
+      },
+    });
 
   } catch (error) {
     return NextResponse.json({ error: '갤러리 조회 실패' }, { status: 500 });
@@ -166,6 +266,23 @@ export async function POST(request: NextRequest) {
         store: store || 'google-play', // 기본값으로 구글플레이 설정
         storeUrl: storeUrl || undefined,
         appCategory: (appCategory as 'normal' | 'featured' | 'events') || 'normal', // 기본값으로 normal 설정
+        // AppItem과 호환성을 위한 필드들
+        name: title,
+        developer: author,
+        description: content,
+        iconUrl: imageUrl,
+        screenshotUrls: imageUrl ? [imageUrl] : [],
+        rating: 4.5,
+        downloads: "1K+",
+        version: "1.0.0",
+        size: "50MB",
+        category: "",
+        views: 0,
+        likes: 0,
+        uploadDate: new Date().toISOString(),
+        isFeatured: appCategory === 'featured',
+        isEvent: appCategory === 'events',
+        adminStoreUrl: undefined,
       };
     }
 
