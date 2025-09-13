@@ -87,7 +87,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, isAuthenticated]);
+  }, [type]);
 
       // 폼 변경 즉시 저장
     useEffect(() => {
@@ -299,7 +299,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       });
 
       if (response.ok) {
-        console.log(`✅ ${type} 삭제 완료: ${id}`);
+(`✅ ${type} 삭제 완료: ${id}`);
         // 콘텐츠 목록 다시 로드 (타입별로 정확히 필터링)
         try {
           const res = await fetch(`/api/content?type=${type}`);
@@ -944,4 +944,3 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
     </div>
   );
 }
-
