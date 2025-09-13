@@ -313,9 +313,10 @@ function HomeContent() {
   const handleAppUpload = async (data: AppFormData, files: { icon: File; screenshots: File[] }) => {
     try {
       // 아이콘/스크린샷 파일 업로드 (Vercel Blob 우선)
-      const iconUrl = await uploadFile(files.icon, "icon");
+  // 갤러리용 파일은 gallery-gallery 폴더 하위에 저장하여 JSON과 동일한 위치로 정렬
+  const iconUrl = await uploadFile(files.icon, "gallery-gallery/icon");
       const screenshotUrls = await Promise.all(
-        files.screenshots.map(file => uploadFile(file, "screenshot"))
+  files.screenshots.map(file => uploadFile(file, "gallery-gallery/screenshot"))
       );
 
       // 새 앱 아이템 생성 (sanitizeApp으로 필수 필드 보장)
@@ -682,13 +683,13 @@ function HomeContent() {
 
       // 새 아이콘이 있으면 업데이트 (글로벌 저장소 사용)
       if (files?.icon) {
-        updatedApp.iconUrl = await uploadFile(files.icon, "icon");
+  updatedApp.iconUrl = await uploadFile(files.icon, "gallery-gallery/icon");
       }
 
       // 새 스크린샷이 있으면 업데이트 (글로벌 저장소 사용)
       if (files?.screenshots && files.screenshots.length > 0) {
         const newScreenshotUrls = await Promise.all(
-          files.screenshots.map(file => uploadFile(file, "screenshot"))
+          files.screenshots.map(file => uploadFile(file, "gallery-gallery/screenshot"))
         );
         updatedApp.screenshotUrls = newScreenshotUrls;
       }
