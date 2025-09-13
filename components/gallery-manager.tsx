@@ -177,15 +177,15 @@ export function GalleryManager({
           )
         ) : (
           currentItems.map((item) => (
-            <div key={item.id} className="relative w-full max-w-[256px] mx-auto">
+            <div key={item.id} className="relative mx-auto">
             <Card
               className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
               style={{ backgroundColor: "#D1E2EA" }}
               onMouseEnter={blockTranslationFeedback}
             >
               <div className="relative">
-                {/* Screenshot/App Preview: 한 단계 더 축소 (aspect-[4/5]) */}
-                <div className="aspect-[4/5] overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
+                {/* Screenshot/App Preview: 상단 스크린샷은 정사각형 유지 */}
+                <div className="aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
                   {item.screenshotUrls && item.screenshotUrls.length > 0 ? (
                     <Image
                       src={item.screenshotUrls[0]}
