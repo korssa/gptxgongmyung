@@ -235,3 +235,4 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
     </div>
   );
 }
+
