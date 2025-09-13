@@ -133,7 +133,7 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
     }
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 justify-items-center">
         {appsToRender.map((app, index) => (
           <div key={app.id} className="relative w-full max-w-[256px] mx-auto">
             {showNumbering && (
