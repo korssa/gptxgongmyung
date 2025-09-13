@@ -49,7 +49,7 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
   const totalPages = Math.ceil(apps.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentApps = apps.slice(startIndex, endIndex);
+  // const currentApps = apps.slice(startIndex, endIndex);
 
   // 페이지 변경 핸들러
   const handlePageChange = (page: number) => {
@@ -115,7 +115,7 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 justify-items-center">
         {appsToRender.map((app, index) => (
-          <div key={app.id} className="relative w-full max-w-[256px] mx-auto">
+          <div key={app.id} className="relative mx-auto">
             {showNumbering && (
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 event-number text-black font-bold text-2xl w-16 h-16 rounded-full flex items-center justify-center">
                 {index + 1}
