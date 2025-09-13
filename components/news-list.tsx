@@ -807,3 +807,4 @@ export function NewsList({ type, onBack }: NewsListProps) {
     </div>
   );
 }
+
