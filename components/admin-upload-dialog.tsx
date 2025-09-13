@@ -195,32 +195,8 @@ export function AdminUploadDialog({
         alert("업로드 중 오류가 발생했습니다.");
       }
     } else if (onUpload) {
-      // targetGallery가 없으면 /api/gallery API를 직접 호출 (type=normal로 All Apps에 저장)
-      try {
-        const formDataToSend = new FormData();
-        formDataToSend.append("file", iconFile);
-        formDataToSend.append("title", formData.name);
-        formDataToSend.append("content", formData.description || "");
-        formDataToSend.append("author", formData.developer);
-        formDataToSend.append("tags", formData.tags || "");
-        formDataToSend.append("isPublished", "true");
-        formDataToSend.append("store", formData.store || "google-play");
-        formDataToSend.append("storeUrl", formData.storeUrl || "");
-        formDataToSend.append("appCategory", formData.appCategory || "normal");
-
-        const response = await fetch(`/api/gallery?type=normal`, {
-          method: "POST",
-          body: formDataToSend,
-        });
-
-        if (response.ok) {
-          onUpload(formData, { icon: iconFile, screenshots: screenshotFiles });
-        } else {
-          alert("업로드에 실패했습니다.");
-        }
-      } catch (error) {
-        alert("업로드 중 오류가 발생했습니다.");
-      }
+      // 중복 생성을 막기 위해 서버 POST 대신 상위 onUpload 핸들러에 위임
+      onUpload(formData, { icon: iconFile, screenshots: screenshotFiles });
     }
 
     setIsOpen(false);
