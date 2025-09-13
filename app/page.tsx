@@ -93,14 +93,16 @@ function HomeContent() {
   const [latestApp, setLatestApp] = useState<AppItem | null>(null);
   const searchParams = useSearchParams();
 
-  // URL 쿼리 파라미터 처리 - 홈 버튼 클릭 시 도메인으로 이동
+  // URL 쿼리 파라미터 처리 - 홈(root)에서만 filter 쿼리 감지 시 리디렉션
+  const router = useRouter();
   useEffect(() => {
     const filter = searchParams.get('filter');
-    if (filter && ['all', 'featured', 'events'].includes(filter)) {
-      // 홈 버튼 클릭 시 현재 도메인으로 이동
-      window.location.href = "https://gptxgongmyung-com.vercel.app/";
+    const isRoot = typeof window !== 'undefined' && window.location.pathname === "/";
+    if (isRoot && filter && ['all', 'featured', 'events'].includes(filter)) {
+      // Next.js router.replace를 사용해 부드럽게 경로를 바꿉니다 (새로고침 방지)
+      router.replace('/');
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   // 전역 스토어 사용
   // 로컬 상태로 앱 데이터 관리 (Zustand 제거)
