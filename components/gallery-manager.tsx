@@ -161,8 +161,8 @@ export function GalleryManager({
         </Button>
       )}
 
-      {/* 카드 그리드 (이전 레이아웃 복원) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+  {/* 카드 그리드 (이전 레이아웃 복원) */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 justify-items-center">
         {currentItems.length === 0 ? (
           type !== "normal" && (
             <div className="col-span-full">
@@ -177,15 +177,15 @@ export function GalleryManager({
           )
         ) : (
           currentItems.map((item) => (
+            <div key={item.id} className="relative w-full max-w-[256px] mx-auto">
             <Card
-              key={item.id}
               className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
               style={{ backgroundColor: "#D1E2EA" }}
               onMouseEnter={blockTranslationFeedback}
             >
               <div className="relative">
-                {/* Screenshot/App Preview: 살짝 축소 (aspect-[5/6]) */}
-                <div className="aspect-[5/6] overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
+                {/* Screenshot/App Preview: 한 단계 더 축소 (aspect-[4/5]) */}
+                <div className="aspect-[4/5] overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
                   {item.screenshotUrls && item.screenshotUrls.length > 0 ? (
                     <Image
                       src={item.screenshotUrls[0]}
@@ -242,7 +242,7 @@ export function GalleryManager({
 
               <CardContent className="px-2 py-0" style={{ backgroundColor: '#D1E2EA' }}>
                 {/* App Icon and Basic Info (아이콘/텍스트 크기는 그대로) */}
-                <div className="flex items-start space-x-3 mb-1">
+                <div className="flex items-start space-x-3 mb-0.5">
                   <Image
                     src={item.iconUrl}
                     alt={item.name}
@@ -263,7 +263,7 @@ export function GalleryManager({
                 </div>
 
                 {/* Rating and Stats */}
-                <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
+                <div className="flex items-center justify-between text-sm text-muted-foreground mb-0.5">
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -291,9 +291,9 @@ export function GalleryManager({
                 )}
               </CardContent>
 
-              {/* Download Section: 세로 패딩만 축소 */}
-              <CardFooter className="w-full bg-[#84CC9A] border-t border-gray-300 px-4 py-1">
-                <div className="flex flex-col items-start space-y-1 w-full">
+              {/* Download Section: 세로 패딩 추가 축소 */}
+              <CardFooter className="w-full bg-[#84CC9A] border-t border-gray-300 px-3 py-0.5">
+                <div className="flex flex-col items-start space-y-0.5 w-full">
                   {/* Download Button */}
                   <div className="w-full">
                     {item.status === "published" ? (
@@ -333,6 +333,7 @@ export function GalleryManager({
                 </div>
               </CardFooter>
             </Card>
+            </div>
           ))
         )}
       </div>
