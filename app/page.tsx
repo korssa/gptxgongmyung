@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 declare global {
@@ -27,7 +27,7 @@ import { uploadFile } from "@/lib/storage-adapter";
 import { loadAppsFromBlob, loadAppsByTypeFromBlob, saveAppsByTypeToBlob, loadFeaturedIds, loadEventIds, saveFeaturedIds, saveEventIds } from "@/lib/data-loader";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
 import { AppGallery } from "@/components/app-gallery";
-import GalleryManager from "@/components/gallery-manager";
+import { GalleryManager } from "@/components/gallery-manager";
 import Image from "next/image";
 import { AdminUploadPublishDialog } from "@/components/admin-upload-publish";
 
@@ -48,35 +48,6 @@ const applyFeaturedFlags = (apps: AppItem[], featuredIds: string[], eventIds: st
   return apps.map(a => ({ ...a, isFeatured: f.has(a.id), isEvent: e.has(a.id) }));
 };
 
-// 앱 데이터 정제 함수 - 필수 필드들이 누락되지 않도록 보장
-const sanitizeApp = (app: Partial<AppItem>): AppItem => {
-  return {
-    id: app.id!,
-    name: app.name || "(No Title)",
-    developer: app.developer || "(No Developer)",
-    description: app.description || "",
-    iconUrl: (app.iconUrl && typeof app.iconUrl === 'string' && !app.iconUrl.includes('null')) 
-      ? app.iconUrl 
-      : "/icon-192x192.png",
-    screenshotUrls: app.screenshotUrls || [],
-    store: app.store || "google-play",
-    status: app.status || "published",
-    rating: app.rating ?? 0,
-    downloads: app.downloads || "0",
-    views: app.views ?? 0,
-    likes: app.likes ?? 0,
-    uploadDate: app.uploadDate || new Date().toISOString(),
-    tags: app.tags || [],
-    storeUrl: app.storeUrl || "",
-    version: app.version || "1.0.0",
-    size: app.size || "10MB",
-    category: app.category || "Other",
-    type: "gallery",
-    isFeatured: app.isFeatured,
-    isEvent: app.isEvent,
-  };
-};
-
 // 빈 앱 데이터 (샘플 앱 제거됨)
 const sampleApps: AppItem[] = [];
 
@@ -93,16 +64,14 @@ function HomeContent() {
   const [latestApp, setLatestApp] = useState<AppItem | null>(null);
   const searchParams = useSearchParams();
 
-  // URL 쿼리 파라미터 처리 - 홈(root)에서만 filter 쿼리 감지 시 리디렉션
-  const router = useRouter();
+  // URL 쿼리 파라미터 처리 - 홈 버튼 클릭 시 도메인으로 이동
   useEffect(() => {
     const filter = searchParams.get('filter');
-    const isRoot = typeof window !== 'undefined' && window.location.pathname === "/";
-    if (isRoot && filter && ['all', 'featured', 'events'].includes(filter)) {
-      // Next.js router.replace를 사용해 부드럽게 경로를 바꿉니다 (새로고침 방지)
-      router.replace('/');
+    if (filter && ['all', 'featured', 'events'].includes(filter)) {
+      // 홈 버튼 클릭 시 현재 도메인으로 이동
+      window.location.href = "https://gptxgongmyung-com.vercel.app/";
     }
-  }, [searchParams, router]);
+  }, [searchParams]);
 
   // 전역 스토어 사용
   // 로컬 상태로 앱 데이터 관리 (Zustand 제거)
@@ -127,6 +96,14 @@ function HomeContent() {
     );
   };
 
+  // 최신 앱 로드 - allApps가 로드된 후 실행
+  useEffect(() => {
+    if (allApps.length > 0) {
+      const latestApp = getLatestApp();
+      setLatestApp(latestApp);
+    }
+  }, [allApps]);
+
   // Request ID for preventing race conditions
   const reqIdRef = useRef(0);
   const loadedRef = useRef(false);
@@ -148,7 +125,12 @@ function HomeContent() {
     // Type filter using global store
     switch (currentFilter) {
       case "latest":
-        return []; // 빈 배열 반환하여 GalleryManager에서 무시되도록 함 (latestApp이 별도 처리)
+        const latestApps = filtered
+          .filter(app => app.status === "published")
+          .sort((a, b) => 
+            new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
+          );
+        return latestApps.slice(0, 1); // 가장 최근 published 앱 1개만 반환
       case "featured": {
         return allApps.filter(app => featuredIds.includes(app.id)).sort((a, b) => a.name.localeCompare(b.name));
       }
@@ -161,7 +143,7 @@ function HomeContent() {
       }
       case "all":
       default:
-  return filtered.sort((a, b) => a.name.localeCompare(b.name));
+        return allApps.sort((a, b) => a.name.localeCompare(b.name));
     }
   }, [allApps, currentFilter, searchQuery, featuredIds, eventIds]);
 
@@ -262,9 +244,9 @@ function HomeContent() {
           loadEventIds()
         ]);
         
-        // 4. 앱들에 플래그 적용 및 데이터 정제
+        // 4. 앱들에 플래그 적용
         const appsWithFlags = applyFeaturedFlags(validatedApps, featuredIds, eventIds);
-        const appsWithType = appsWithFlags.map(app => sanitizeApp({ ...app, type: 'gallery' as const }));
+        const appsWithType = appsWithFlags.map(app => ({ ...app, type: 'gallery' as const }));
         
         
         // 5. 전역 스토어 업데이트
@@ -287,40 +269,31 @@ function HomeContent() {
 
 
    // New Release 앱을 가져오는 별도 함수
-  const getLatestApp = useCallback(() => {
+  const getLatestApp = () => {
     try {
-      // 퍼블리시된 앱들 중에서 uploadDate 기준으로 최신 앱 가져오기
+      // allApps에서 가장 최근 퍼블리시한 앱 가져오기
       const publishedApps = allApps
         .filter(app => app.status === "published")
         .sort((a, b) => 
           new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
         );
-      return publishedApps[0] || null;
+        return publishedApps[0] || null; // 가장 최근 퍼블리시한 앱 1개만 반환
     } catch (error) {
       console.error('최신 앱 조회 실패:', error);
       return null;
     }
-  }, [allApps]);
-
-  // 최신 앱 로드 - allApps가 로드된 후 실행
-  useEffect(() => {
-    if (allApps.length > 0) {
-      const latestApp = getLatestApp();
-      setLatestApp(latestApp);
-    }
-  }, [allApps, getLatestApp]);
+  };
 
   const handleAppUpload = async (data: AppFormData, files: { icon: File; screenshots: File[] }) => {
     try {
       // 아이콘/스크린샷 파일 업로드 (Vercel Blob 우선)
-  // 갤러리용 파일은 gallery-gallery 폴더 하위에 저장하여 JSON과 동일한 위치로 정렬
-  const iconUrl = await uploadFile(files.icon, "gallery-gallery/icon");
+      const iconUrl = await uploadFile(files.icon, "icon");
       const screenshotUrls = await Promise.all(
-  files.screenshots.map(file => uploadFile(file, "gallery-gallery/screenshot"))
+        files.screenshots.map(file => uploadFile(file, "screenshot"))
       );
 
-      // 새 앱 아이템 생성 (sanitizeApp으로 필수 필드 보장)
-      const newApp: AppItem = sanitizeApp({
+      // 새 앱 아이템 생성
+      const newApp: AppItem = {
         id: generateUniqueId(),
         name: data.name,
         developer: data.developer,
@@ -333,14 +306,14 @@ function HomeContent() {
         downloads: data.downloads,
         views: 0,
         likes: 0,
-        uploadDate: new Date().toISOString(),
+        uploadDate: new Date().toISOString().split('T')[0],
         tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
         storeUrl: data.storeUrl || undefined,
         version: data.version,
         size: data.size,
         category: data.category,
         type: 'gallery', // 갤러리 앱 타입 명시
-      });
+      };
 
       // 통합된 저장 및 상태 업데이트 (기존 데이터 보존)
       // 1. 기존 앱 데이터 로드 (오버라이트 방지)
@@ -446,7 +419,7 @@ function HomeContent() {
         });
 
         if (deleteResponse.ok) {
-          await deleteResponse.json();
+          const deleteResult = await deleteResponse.json();
           deleteSuccess = true;
         } else {
           console.error('❌ 앱 삭제 API 실패:', deleteResponse.status);
@@ -466,11 +439,11 @@ function HomeContent() {
       }
 
       // 6. 로컬 상태 업데이트 (UI 즉시 반영) - 삭제 성공 시에만
-  if (deleteSuccess) {
-  setAllApps(newApps);
-  setFeaturedIds(newFeaturedApps);
-  setEventIds(newEventApps);
-  console.log('✅ 앱 삭제 완료 및 로컬 상태 업데이트');
+      if (deleteSuccess) {
+        setAllApps(newApps);
+        setFeaturedIds(newFeaturedApps);
+        setEventIds(newEventApps);
+('✅ 앱 삭제 완료 및 로컬 상태 업데이트');
       } else {
         console.error('❌ 앱 삭제 실패 - 로컬 상태 업데이트 안함');
       }
@@ -664,32 +637,31 @@ function HomeContent() {
       const appIndex = allApps.findIndex(app => app.id === appId);
       if (appIndex === -1) return;
 
-      // 기본 정보 업데이트 (sanitizeApp으로 필수 필드 보장)
-      const updatedApp = sanitizeApp({
-        ...allApps[appIndex],
-        name: data.name,
-        developer: data.developer,
-        description: data.description,
-        store: data.store,
-        status: data.status,
-        rating: data.rating,
-        downloads: data.downloads,
-        version: data.version,
-        size: data.size,
-        category: data.category,
-        storeUrl: data.storeUrl || undefined,
-        tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
-      });
+      const updatedApp = { ...allApps[appIndex] };
+
+      // 기본 정보 업데이트
+      updatedApp.name = data.name;
+      updatedApp.developer = data.developer;
+      updatedApp.description = data.description;
+      updatedApp.store = data.store;
+      updatedApp.status = data.status;
+      updatedApp.rating = data.rating;
+      updatedApp.downloads = data.downloads;
+      updatedApp.version = data.version;
+      updatedApp.size = data.size;
+      updatedApp.category = data.category;
+      updatedApp.storeUrl = data.storeUrl || undefined;
+      updatedApp.tags = data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [];
 
       // 새 아이콘이 있으면 업데이트 (글로벌 저장소 사용)
       if (files?.icon) {
-  updatedApp.iconUrl = await uploadFile(files.icon, "gallery-gallery/icon");
+        updatedApp.iconUrl = await uploadFile(files.icon, "icon");
       }
 
       // 새 스크린샷이 있으면 업데이트 (글로벌 저장소 사용)
       if (files?.screenshots && files.screenshots.length > 0) {
         const newScreenshotUrls = await Promise.all(
-          files.screenshots.map(file => uploadFile(file, "gallery-gallery/screenshot"))
+          files.screenshots.map(file => uploadFile(file, "screenshot"))
         );
         updatedApp.screenshotUrls = newScreenshotUrls;
       }
@@ -713,7 +685,8 @@ function HomeContent() {
         });
 
         if (updateResponse.ok) {
-          await updateResponse.json();
+          const updateResult = await updateResponse.json();
+          
           // 로컬 상태 업데이트
           setAllApps(newApps);
         } else {
@@ -859,7 +832,7 @@ function HomeContent() {
                </div>
               
                              <div className="flex justify-center px-4 max-w-4xl mx-auto">
-                <div className="relative group w-full max-w-[256px]">
+                 <div className="relative group w-full max-w-sm">
                    {/* 화려한 테두리 효과 */}
                    <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
                    <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse" style={{animationDelay: '0.5s'}}></div>
@@ -1298,7 +1271,7 @@ function HomeContent() {
 />
 
 <AdminUploadPublishDialog
-  onUploadAction={handleAppUpload}
+  onUpload={handleAppUpload}
   buttonProps={{
     size: "lg",
     className: "gap-2 text-white bg-orange-600 hover:bg-orange-700",
