@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable @next/next/no-img-element */
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,13 +19,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Plus, Edit, Trash2, EyeOff, Calendar, User, ArrowLeft, Home } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Edit, Trash2, EyeOff, Calendar, User, FileText, ArrowLeft, Home } from "lucide-react";
 import { ContentItem, ContentFormData, ContentType } from "@/types";
 import { useAdmin } from "@/hooks/use-admin";
 import { uploadFile } from "@/lib/storage-adapter";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
 import { loadContentsFromBlob } from "@/lib/data-loader";
 import { loadMemoDraft, saveMemoDraft, clearMemoDraft } from "@/lib/memo-storage";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface NewsListProps {
@@ -81,6 +82,7 @@ export function NewsList({ type, onBack }: NewsListProps) {
         isPublished: typeof draft.isPublished === 'boolean' ? draft.isPublished : prev.isPublished,
       }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 폼 변경 즉시 저장
@@ -114,7 +116,7 @@ export function NewsList({ type, onBack }: NewsListProps) {
           // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
           setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
         }
-      } catch {
+      } catch (err) {
         // Failed to load contents
       } finally {
         setLoading(false);
@@ -249,7 +251,7 @@ export function NewsList({ type, onBack }: NewsListProps) {
             // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
             setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
           }
-              } catch {
+              } catch (error) {
         // 목록 새로고침 실패
       }
         
@@ -286,7 +288,7 @@ export function NewsList({ type, onBack }: NewsListProps) {
             // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
             setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
           }
-              } catch {
+              } catch (error) {
         // 삭제 후 목록 새로고침 실패
       }
         
@@ -731,16 +733,16 @@ export function NewsList({ type, onBack }: NewsListProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6 justify-items-center">
         {contents.map((content) => (
-          <div key={content.id} className="w-full max-w-[256px] mx-auto">
-            <Card
-              className="bg-gray-800/50 border-2 border-gray-700 hover:border-amber-400/70 hover:bg-gray-800/80 transition-all duration-300 cursor-pointer group"
-              onClick={() => {
-                setSelected(content);
-                blockTranslationFeedback();
-              }}
-            >
+                     <Card
+             key={content.id}
+             className="bg-gray-800/50 border-2 border-gray-700 hover:border-amber-400/70 hover:bg-gray-800/80 transition-all duration-300 cursor-pointer group max-w-[256px] w-full"
+             onClick={() => {
+               setSelected(content);
+               blockTranslationFeedback();
+             }}
+           >
             <CardHeader className="pb-3">
               {content.imageUrl && (
                 <div className="mb-3">
@@ -799,8 +801,7 @@ export function NewsList({ type, onBack }: NewsListProps) {
               </div>
               )}
             </CardContent>
-            </Card>
-          </div>
+          </Card>
         ))}
       </div>
     </div>
