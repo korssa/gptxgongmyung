@@ -45,11 +45,17 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
   const googlePlayApps = apps.filter(app => app.store === "google-play");
   const appStoreApps = apps.filter(app => app.store === "app-store");
 
-  // 페이지네이션 계산
-  const totalPages = Math.ceil(apps.length / itemsPerPage);
+  // 탭 변경 시 페이지 리셋
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
+
+  // 활성 탭 기준 페이지네이션 계산
+  const activeAppsList = activeTab === "google-play" ? googlePlayApps : appStoreApps;
+  const totalPages = Math.ceil(activeAppsList.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  // const currentApps = apps.slice(startIndex, endIndex);
+  const currentApps = activeAppsList.slice(startIndex, endIndex);
 
   // 페이지 변경 핸들러
   const handlePageChange = (page: number) => {
@@ -113,7 +119,7 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 justify-items-center">
+      <div className="grid grid-cols-1 gap-6 justify-items-center">
         {appsToRender.map((app, index) => (
           <div key={app.id} className="relative mx-auto">
             {showNumbering && (
@@ -155,16 +161,16 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
         </div>
 
         <TabsContent value="google-play" className="mt-0">
-          {renderAppGrid(googlePlayApps)}
+          {renderAppGrid(activeTab === "google-play" ? currentApps : googlePlayApps)}
         </TabsContent>
 
         <TabsContent value="app-store" className="mt-0">
-          {renderAppGrid(appStoreApps)}
+          {renderAppGrid(activeTab === "app-store" ? currentApps : appStoreApps)}
         </TabsContent>
       </Tabs>
 
       {/* 페이지네이션 - 6개 이상일 때만 표시 */}
-      {apps.length > itemsPerPage && (
+      {activeAppsList.length > itemsPerPage && (
         <div className="flex justify-center items-center space-x-2 mt-8">
           {/* 이전 페이지 버튼 */}
           <Button
@@ -207,9 +213,9 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
       )}
 
       {/* 페이지 정보 */}
-      {apps.length > 0 && (
+      {activeAppsList.length > 0 && (
         <div className="text-center text-gray-400 text-sm mt-4" onMouseEnter={blockTranslationFeedback}>
-          {startIndex + 1}-{Math.min(endIndex, apps.length)} of {apps.length} items
+          {startIndex + 1}-{Math.min(endIndex, activeAppsList.length)} of {activeAppsList.length} items
         </div>
       )}
     </div>
