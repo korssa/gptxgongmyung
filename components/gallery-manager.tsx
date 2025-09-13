@@ -65,8 +65,8 @@ export function GalleryManager({
     loadItems();
     const savedLikes = localStorage.getItem(`gallery-likes-${type}`);
     if (savedLikes) setLikes(JSON.parse(savedLikes));
-  // 타입 변경 시 첫 페이지로 리셋
-  setCurrentPage(1);
+    // 타입 변경 시 첫 페이지로 리셋
+    setCurrentPage(1);
   }, [type, loadItems]);
 
   // items가 변경되면 현재 페이지가 총 페이지 수를 넘지 않도록 보정
@@ -91,7 +91,7 @@ export function GalleryManager({
           } else {
             alert("삭제에 실패했습니다.");
           }
-  } catch {
+        } catch {
           alert("삭제 중 오류가 발생했습니다.");
         }
       }
@@ -161,7 +161,7 @@ export function GalleryManager({
         </Button>
       )}
 
-      {/* 카드 그리드 */}
+      {/* 카드 그리드 (이전 레이아웃 복원) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {currentItems.length === 0 ? (
           type !== "normal" && (
@@ -184,8 +184,8 @@ export function GalleryManager({
               onMouseEnter={blockTranslationFeedback}
             >
               <div className="relative">
-                {/* Screenshot/App Preview */}
-                <div className="aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
+                {/* Screenshot/App Preview: 살짝 축소 (aspect-[5/6]) */}
+                <div className="aspect-[5/6] overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
                   {item.screenshotUrls && item.screenshotUrls.length > 0 ? (
                     <Image
                       src={item.screenshotUrls[0]}
@@ -202,7 +202,7 @@ export function GalleryManager({
                   )}
                 </div>
 
-                {/* Store Badge */}
+                {/* Store/Status Badge */}
                 <div className="absolute bottom-2 left-2">
                   <Badge className={`text-white text-xs ${
                     item.status === 'published' 
@@ -241,8 +241,8 @@ export function GalleryManager({
               </div>
 
               <CardContent className="px-2 py-0" style={{ backgroundColor: '#D1E2EA' }}>
-                {/* App Icon and Basic Info */}
-                <div className="flex items-start space-x-3 mb-2">
+                {/* App Icon and Basic Info (아이콘/텍스트 크기는 그대로) */}
+                <div className="flex items-start space-x-3 mb-1">
                   <Image
                     src={item.iconUrl}
                     alt={item.name}
@@ -263,7 +263,7 @@ export function GalleryManager({
                 </div>
 
                 {/* Rating and Stats */}
-                <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+                <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
                   <div className="flex items-center space-x-3">
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -291,8 +291,8 @@ export function GalleryManager({
                 )}
               </CardContent>
 
-              {/* Download Section */}
-              <CardFooter className="w-full bg-[#84CC9A] border-t border-gray-300 px-4 py-2">
+              {/* Download Section: 세로 패딩만 축소 */}
+              <CardFooter className="w-full bg-[#84CC9A] border-t border-gray-300 px-4 py-1">
                 <div className="flex flex-col items-start space-y-1 w-full">
                   {/* Download Button */}
                   <div className="w-full">
