@@ -60,7 +60,7 @@ export function AppGallery({ apps: initialApps, viewMode, onDeleteApp, onEditApp
   const totalPages = Math.max(1, Math.ceil(activeApps.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const pagedApps = activeApps.slice(startIndex, endIndex);
+  // const pagedApps = activeApps.slice(startIndex, endIndex); // unused
 
   const getPagedFor = (tab: AppStore) => {
     const list = tab === 'google-play' ? googlePlayApps : appStoreApps;
