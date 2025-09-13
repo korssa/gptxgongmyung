@@ -34,6 +34,9 @@ export function GalleryManager({
   const [likes, setLikes] = useState<{ [key: string]: number }>({});
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
+  // Admin upload dialog states (featured/events 전용)
+  const [isFeaturedDialogOpen, setFeaturedDialogOpen] = useState(false);
+  const [isEventsDialogOpen, setEventsDialogOpen] = useState(false);
 
   const loadItems = useCallback(async () => {
     try {
@@ -53,7 +56,7 @@ export function GalleryManager({
           setItems(data.filter((item: AppItem) => item.status === "published"));
         }
       }
-    } catch (_error) {
+    } catch {
       // noop
     }
   }, [type]);
@@ -88,7 +91,7 @@ export function GalleryManager({
           } else {
             alert("삭제에 실패했습니다.");
           }
-        } catch (error) {
+  } catch {
           alert("삭제 중 오류가 발생했습니다.");
         }
       }
@@ -120,6 +123,29 @@ export function GalleryManager({
               {description}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Admin: featured / events 업로드 버튼 (gallery/normal은 숨김) */}
+      {isAdmin && (type === "featured" || type === "events") && (
+        <div className="flex justify-end">
+          {type === "featured" ? (
+            <Button
+              className="bg-blue-600 text-white hover:bg-blue-700"
+              onClick={() => setFeaturedDialogOpen(true)}
+              onMouseEnter={blockTranslationFeedback}
+            >
+              + Add Featured
+            </Button>
+          ) : (
+            <Button
+              className="bg-blue-600 text-white hover:bg-blue-700"
+              onClick={() => setEventsDialogOpen(true)}
+              onMouseEnter={blockTranslationFeedback}
+            >
+              + Add Event
+            </Button>
+          )}
         </div>
       )}
 
@@ -358,26 +384,28 @@ export function GalleryManager({
         </div>
       )}
 
-      {/* 업로드 다이얼로그 → Upload 버튼이 없으니 자동 열리는 일도 없음 */}
-      {isAdmin && (
-        <>
-          {type === "featured" && (
-            <AdminFeaturedUploadDialog
-              isOpen={false}
-              onClose={() => {}}
-              onUploadSuccess={loadItems}
-              targetGallery={type}
-            />
-          )}
-          {type === "events" && (
-            <AdminEventsUploadDialog
-              isOpen={false}
-              onClose={() => {}}
-              onUploadSuccess={loadItems}
-              targetGallery={type}
-            />
-          )}
-        </>
+      {/* 업로드 다이얼로그 (admin 전용): featured/events에서만 동작 */}
+      {isAdmin && type === "featured" && (
+        <AdminFeaturedUploadDialog
+          isOpen={isFeaturedDialogOpen}
+          onClose={() => setFeaturedDialogOpen(false)}
+          onUploadSuccess={() => {
+            setFeaturedDialogOpen(false);
+            loadItems();
+          }}
+          targetGallery={type}
+        />
+      )}
+      {isAdmin && type === "events" && (
+        <AdminEventsUploadDialog
+          isOpen={isEventsDialogOpen}
+          onClose={() => setEventsDialogOpen(false)}
+          onUploadSuccess={() => {
+            setEventsDialogOpen(false);
+            loadItems();
+          }}
+          targetGallery={type}
+        />
       )}
     </div>
   );
