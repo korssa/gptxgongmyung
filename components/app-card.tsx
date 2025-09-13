@@ -3,12 +3,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Star, User, Download } from "lucide-react";
+import { Star, Download } from "lucide-react";
 import { useState } from "react";
 import { AppItem } from "@/types";
 import { useLanguage } from "@/hooks/use-language";
 import { useAdmin } from "@/hooks/use-admin";
-import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
+import { blockTranslationFeedback } from "@/lib/translation-utils";
 import { AdminCardActionsDialog } from "./admin-card-actions-dialog";
 import Image from "next/image";
 
@@ -267,9 +267,9 @@ export function AppCard({ app, viewMode, onDelete, onEdit, onToggleFeatured, onT
           )}
         </div>
 
-        <CardContent className="px-2 py-0" style={{ backgroundColor: '#D1E2EA' }}>
+        <CardContent className="px-2 py-0 -mt-1" style={{ backgroundColor: '#D1E2EA' }}>
           {/* App Icon and Basic Info */}
-          <div className="flex items-start space-x-3 mb-2">
+          <div className="flex items-start space-x-3 mb-1">
             <Image
               src={app.iconUrl}
               alt={app.name}
@@ -282,13 +282,13 @@ export function AppCard({ app, viewMode, onDelete, onEdit, onToggleFeatured, onT
               }}
             />
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-base mb-1 truncate notranslate app-name-fixed" translate="no">{app.name}</h3>
+              <h3 className="font-semibold text-base mb-0.5 truncate notranslate app-name-fixed" translate="no">{app.name}</h3>
               <p className="text-sm text-muted-foreground truncate notranslate app-developer-fixed" translate="no">{app.developer}</p>
             </div>
           </div>
 
           {/* Rating and Stats */}
-          <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+          <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
             <div className="flex items-center space-x-3">
               <div className="flex items-center gap-1">
                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -317,8 +317,8 @@ export function AppCard({ app, viewMode, onDelete, onEdit, onToggleFeatured, onT
         </CardContent>
 
         {/* Download Section - CardContent 밖으로 이동 */}
-        <div className="w-full bg-[#84CC9A] border-t border-gray-300 px-4 py-2">
-          <div className="flex flex-col items-start space-y-1">
+        <div className="w-full bg-[#84CC9A] border-t border-gray-300 px-3 py-1">
+          <div className="flex flex-col items-start space-y-0">
             {/* 하단 2줄 - 다운로드 버튼 */}
             <div className="w-full">
               {app.status === "published" ? (
