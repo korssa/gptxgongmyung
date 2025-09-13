@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,15 +20,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, EyeOff, Calendar, User, FileText, ArrowLeft, Home } from "lucide-react";
+import { Plus, Edit, Trash2, EyeOff, Calendar, User, ArrowLeft, Home } from "lucide-react";
 import { ContentItem, ContentFormData, ContentType } from "@/types";
 import { useAdmin } from "@/hooks/use-admin";
 import { uploadFile } from "@/lib/storage-adapter";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
 import { loadContentsFromBlob } from "@/lib/data-loader";
 import { loadMemoDraft, saveMemoDraft, clearMemoDraft } from "@/lib/memo-storage";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 interface NewsListProps {
@@ -82,7 +81,6 @@ export function NewsList({ type, onBack }: NewsListProps) {
         isPublished: typeof draft.isPublished === 'boolean' ? draft.isPublished : prev.isPublished,
       }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 폼 변경 즉시 저장
@@ -116,7 +114,7 @@ export function NewsList({ type, onBack }: NewsListProps) {
           // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
           setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
         }
-      } catch (err) {
+      } catch {
         // Failed to load contents
       } finally {
         setLoading(false);
@@ -251,7 +249,7 @@ export function NewsList({ type, onBack }: NewsListProps) {
             // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
             setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
           }
-              } catch (error) {
+              } catch {
         // 목록 새로고침 실패
       }
         
@@ -288,7 +286,7 @@ export function NewsList({ type, onBack }: NewsListProps) {
             // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
             setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
           }
-              } catch (error) {
+              } catch {
         // 삭제 후 목록 새로고침 실패
       }
         
