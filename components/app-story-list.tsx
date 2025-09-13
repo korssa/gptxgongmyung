@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable @next/next/no-img-element */
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,12 +19,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Plus, Edit, Trash2, EyeOff, Eye, Calendar, User, ArrowLeft, Home } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Edit, Trash2, EyeOff, Eye, Calendar, User, FileText, ArrowLeft, Home } from "lucide-react";
 import { ContentItem, ContentFormData, ContentType } from "@/types";
 import { useAdmin } from "@/hooks/use-admin";
 import { uploadFile } from "@/lib/storage-adapter";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
-import { loadContentsByTypeFromBlob } from "@/lib/data-loader";
+import { loadContentsFromBlob, loadContentsByTypeFromBlob } from "@/lib/data-loader";
 import { loadMemoDraft, saveMemoDraft, clearMemoDraft } from "@/lib/memo-storage";
 import Link from "next/link";
 
@@ -83,7 +83,8 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
         isPublished: typeof draft.isPublished === 'boolean' ? draft.isPublished : prev.isPublished,
       }));
     }
-  }, [type, isAuthenticated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type]);
 
       // 폼 변경 즉시 저장
     useEffect(() => {
@@ -115,7 +116,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
           // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
           setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
         }
-      } catch {
+      } catch (err) {
         // Failed to load contents
       } finally {
         setLoading(false);
@@ -160,7 +161,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
     blockTranslationFeedback();
 
     return () => observer.disconnect();
-  }, [type, isAuthenticated]);
+  }, [type]);
 
   // 폼 초기화
   const resetForm = () => {
@@ -238,7 +239,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       });
 
       if (response.ok) {
-        await response.json();
+        const result = await response.json();
         
         setIsDialogOpen(false);
         clearMemoDraft(type);
@@ -252,7 +253,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
             // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
             setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
           }
-              } catch {
+              } catch (error) {
         // 목록 새로고침 실패
       }
         
@@ -263,7 +264,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
         let errorData;
         try {
           errorData = JSON.parse(responseText);
-        } catch {
+        } catch (parseError) {
           errorData = { error: responseText || '알 수 없는 오류' };
         }
         
@@ -285,7 +286,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       });
 
       if (response.ok) {
-        console.log(`✅ ${type} 삭제 완료: ${id}`);
+(`✅ ${type} 삭제 완료: ${id}`);
         // 콘텐츠 목록 다시 로드 (타입별로 정확히 필터링)
         try {
           const res = await fetch(`/api/content?type=${type}`);
@@ -340,7 +341,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
             // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
             setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
           }
-              } catch {
+              } catch (error) {
         // 토글 후 목록 새로고침 실패
       }
       }
@@ -791,21 +792,21 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {contents.map((content) => (
-          <div key={content.id} className="w-full max-w-[256px] mx-auto">
-            <Card
-              className="bg-gray-800/50 border-2 border-gray-700 hover:border-amber-400/70 hover:bg-gray-800/80 transition-all duration-300 cursor-pointer group"
-              onClick={() => {
-                setSelected(content);
-                blockTranslationFeedback();
-              }}
-            >
+                     <Card
+             key={content.id}
+             className="bg-gray-800/50 border-2 border-gray-700 hover:border-amber-400/70 hover:bg-gray-800/80 transition-all duration-300 cursor-pointer group"
+             onClick={() => {
+               setSelected(content);
+               blockTranslationFeedback();
+             }}
+           >
             <CardHeader className="pb-3">
               {content.imageUrl && (
-                <div className="mb-3">
+                <div className="mb-3 aspect-square overflow-hidden rounded-lg">
                   <img
                     src={content.imageUrl}
                     alt={content.title}
-                    className="w-full h-auto rounded-lg"
+                    className="w-full h-full object-cover"
                   />
                 </div>
               )}
@@ -857,8 +858,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
                 </div>
               )}
             </CardContent>
-            </Card>
-          </div>
+          </Card>
         ))}
       </div>
     </div>
