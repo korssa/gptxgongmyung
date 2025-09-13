@@ -40,9 +40,9 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingContent, setEditingContent] = useState<ContentItem | null>(null);
-  // Pagination state (5 items per page)
+  // Pagination state (6 items per page)
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 6;
   const [formData, setFormData] = useState<ContentFormData>({
     title: "",
     content: "",
@@ -87,7 +87,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type]);
+  }, [type, isAuthenticated]);
 
       // 폼 변경 즉시 저장
     useEffect(() => {
@@ -299,7 +299,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       });
 
       if (response.ok) {
-(`✅ ${type} 삭제 완료: ${id}`);
+        console.log(`✅ ${type} 삭제 완료: ${id}`);
         // 콘텐츠 목록 다시 로드 (타입별로 정확히 필터링)
         try {
           const res = await fetch(`/api/content?type=${type}`);
