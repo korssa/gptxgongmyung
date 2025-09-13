@@ -184,7 +184,13 @@ export function AdminUploadPublishDialog({ onUpload, buttonProps, buttonText = "
       return;
     }
 
-    try {
+    // onUpload가 제공된 경우, 중복 생성을 방지하기 위해 서버 POST 대신 상위 핸들러에 위임
+    if (onUpload) {
+      onUpload(formData, {
+        icon: iconFile,
+        screenshots: screenshotFiles,
+      });
+    } else try {
       // FormData 생성
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.name);
@@ -206,10 +212,6 @@ export function AdminUploadPublishDialog({ onUpload, buttonProps, buttonText = "
 
       if (response.ok) {
 ("✅ 갤러리에 업로드 성공");
-        onUpload(formData, {
-          icon: iconFile,
-          screenshots: screenshotFiles,
-        });
       } else {
 ("❌ 갤러리 업로드 실패");
         alert("업로드에 실패했습니다.");
