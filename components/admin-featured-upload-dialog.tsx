@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -113,27 +114,31 @@ export function AdminFeaturedUploadDialog({
   const { isAuthenticated, login, logout } = useAdmin();
 
   useEffect(() => {
-    if (iconUrl) {
-      urlManager.revokeObjectURL(iconUrl);
+    if (!iconFile || urlManager.isDisposed()) {
       setIconUrl(null);
+      return;
     }
-    if (iconFile && !urlManager.isDisposed()) {
-      const url = urlManager.createObjectURL(iconFile);
-      if (url) setIconUrl(url);
-    }
+    const createdUrl = urlManager.createObjectURL(iconFile);
+    setIconUrl(createdUrl);
+    return () => {
+      if (createdUrl) urlManager.revokeObjectURL(createdUrl);
+    };
   }, [iconFile, urlManager]);
 
   useEffect(() => {
-    screenshotUrls.forEach((url) => {
-      if (url) urlManager.revokeObjectURL(url);
-    });
-    setScreenshotUrls([]);
-    if (screenshotFiles.length > 0 && !urlManager.isDisposed()) {
-      const urls = screenshotFiles
-        .map((file) => urlManager.createObjectURL(file))
-        .filter((url) => url !== null) as string[];
-      setScreenshotUrls(urls);
+    if (screenshotFiles.length === 0 || urlManager.isDisposed()) {
+      setScreenshotUrls([]);
+      return;
     }
+    const urls = screenshotFiles
+      .map((file) => urlManager.createObjectURL(file))
+      .filter((url) => url !== null) as string[];
+    setScreenshotUrls(urls);
+    return () => {
+      urls.forEach((url) => {
+        if (url) urlManager.revokeObjectURL(url);
+      });
+    };
   }, [screenshotFiles, urlManager]);
 
   const handleLogin = () => {
@@ -190,13 +195,13 @@ export function AdminFeaturedUploadDialog({
         });
 
         if (response.ok) {
-(`✅ 갤러리 ${targetGallery}에 업로드 성공`);
+          console.log(`✅ 갤러리 ${targetGallery}에 업로드 성공`);
           onUploadSuccess();
         } else {
-("❌ 갤러리 업로드 실패");
+          console.warn("❌ 갤러리 업로드 실패");
           alert("업로드에 실패했습니다.");
         }
-      } catch (error) {
+      } catch {
         alert("업로드 중 오류가 발생했습니다.");
       }
     } else if (onUpload) {
