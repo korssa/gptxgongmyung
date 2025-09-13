@@ -56,13 +56,10 @@ export function AppCard({
   const { t } = useLanguage();
   const { isAuthenticated } = useAdmin();
 
-  const isBlobUrl = (url?: string) => {
-    return (
-      !!url &&
-      (url.includes("vercel-storage.com") ||
-        url.includes("blob.vercel-storage.com"))
-    );
-  };
+  const isBlobUrl = (url?: string) =>
+    !!url &&
+    (url.includes("vercel-storage.com") ||
+      url.includes("blob.vercel-storage.com"));
 
   const handleStoreView = () => {
     if (isEvent) {
@@ -76,19 +73,14 @@ export function AppCard({
   };
 
   const getButtonText = () => {
-    if (app.status === "published") {
-      return "Download";
-    }
-    if (isEvent) {
-      return "📝 Memo 2";
-    }
+    if (app.status === "published") return "Download";
+    if (isEvent) return "📝 Memo 2";
     return "Download";
   };
 
-  const handleAdminActions = () => {
-    setIsAdminDialogOpen(true);
-  };
+  const handleAdminActions = () => setIsAdminDialogOpen(true);
 
+  // ---------------------- LIST MODE ----------------------
   if (viewMode === "list") {
     return (
       <>
@@ -97,6 +89,7 @@ export function AppCard({
           style={{ backgroundColor: "#D1E2EA" }}
           onMouseEnter={blockTranslationFeedback}
         >
+          {/* App Icon */}
           <div className="w-24 h-24 flex-shrink-0 p-3">
             <Image
               src={app.iconUrl}
@@ -109,13 +102,16 @@ export function AppCard({
           </div>
 
           <CardContent
-            className="flex-1 px-2 py-0"
+            className="flex-1 px-2 py-2 space-y-2"
             style={{ backgroundColor: "#D1E2EA" }}
           >
-            <div className="flex justify-between items-start h-full">
+            <div className="flex justify-between items-start">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-lg notranslate app-name-fixed">
+                  <h3
+                    className="font-semibold text-lg notranslate app-name-fixed"
+                    translate="no"
+                  >
                     {app.name}
                   </h3>
                   <Badge
@@ -127,7 +123,10 @@ export function AppCard({
 
                 <p className="text-sm text-muted-foreground mb-2">
                   {t("author")}:{" "}
-                  <span className="notranslate app-developer-fixed">
+                  <span
+                    className="notranslate app-developer-fixed"
+                    translate="no"
+                  >
                     {app.developer}
                   </span>
                 </p>
@@ -147,18 +146,64 @@ export function AppCard({
                 </div>
 
                 {app.tags && (
-                  <div className="flex flex-wrap gap-1 mt-2">
+                  <div className="flex flex-wrap gap-1">
                     {app.tags.map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
+                      <Badge
+                        key={index}
+                        variant="secondary"
+                        className="text-xs"
+                      >
                         {tag}
                       </Badge>
                     ))}
                   </div>
                 )}
+
+                {/* 초록색 다운로드 영역 */}
+                <div className="w-full bg-[#84CC9A] px-2 py-1 mt-1">
+                  <div className="flex flex-col items-start space-y-1">
+                    <div className="w-full">
+                      {app.status === "published" ? (
+                        <Button
+                          size="sm"
+                          className="h-7 px-3 text-xs bg-green-700 hover:bg-green-800 text-white flex items-center gap-1 whitespace-nowrap min-w-[120px] justify-start"
+                          onClick={handleStoreView}
+                        >
+                          <Download className="h-3 w-3" />
+                          {getButtonText()}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="h-7 px-3 text-xs bg-gray-500 text-white flex items-center gap-1 min-w-[120px] justify-start"
+                          disabled
+                        >
+                          Coming soon
+                        </Button>
+                      )}
+                    </div>
+                    <div className="h-7">
+                      <Image
+                        src={
+                          app.store === "google-play"
+                            ? "/google-play-badge.png"
+                            : "/app-store-badge.png"
+                        }
+                        alt="스토어 배지"
+                        width={120}
+                        height={28}
+                        className="h-7 object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {isAuthenticated && (
-                <div className="flex flex-col items-end space-y-2 ml-4">
+                <div
+                  className="flex flex-col items-end space-y-2 ml-4"
+                  onMouseEnter={blockTranslationFeedback}
+                >
                   <Button
                     variant="outline"
                     size="sm"
@@ -171,45 +216,6 @@ export function AppCard({
               )}
             </div>
           </CardContent>
-
-          <div className="w-full bg-[#84CC9A] border-t border-gray-300 px-4 py-3">
-            <div className="flex flex-col items-start space-y-2">
-              <div className="w-full">
-                {app.status === "published" ? (
-                  <Button
-                    size="sm"
-                    className="h-7 px-3 text-xs bg-green-700 hover:bg-green-800 text-white flex items-center gap-1 whitespace-nowrap min-w-[120px] justify-start"
-                    onClick={handleStoreView}
-                  >
-                    <Download className="h-3 w-3" />
-                    {getButtonText()}
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    className="h-7 px-3 text-xs bg-gray-500 text-white flex items-center gap-1 min-w-[120px] justify-start"
-                    disabled
-                  >
-                    Coming soon
-                  </Button>
-                )}
-              </div>
-
-              <div className="h-7">
-                <Image
-                  src={
-                    app.store === "google-play"
-                      ? "/google-play-badge.png"
-                      : "/app-store-badge.png"
-                  }
-                  alt="스토어 배지"
-                  width={120}
-                  height={28}
-                  className="h-7 object-contain"
-                />
-              </div>
-            </div>
-          </div>
         </Card>
 
         <AdminCardActionsDialog
@@ -230,7 +236,7 @@ export function AppCard({
     );
   }
 
-  // === GRID MODE ===
+  // ---------------------- GRID MODE ----------------------
   return (
     <>
       <Card
@@ -254,13 +260,13 @@ export function AppCard({
               </div>
             )}
           </div>
-
           <div className="absolute bottom-2 left-2">
-            <Badge className={`${getStatusColor(app.status)} text-white text-xs`}>
+            <Badge
+              className={`${getStatusColor(app.status)} text-white text-xs`}
+            >
               {app.status}
             </Badge>
           </div>
-
           {isAuthenticated && (
             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
               <Button
@@ -275,9 +281,8 @@ export function AppCard({
           )}
         </div>
 
-        {/* ✅ CardFooter 제거하고 CardContent 안에서 footer 처리 */}
         <CardContent
-          className="px-2 py-2 space-y-2"
+          className="px-2 pt-2 pb-0 space-y-2"
           style={{ backgroundColor: "#D1E2EA" }}
         >
           <div className="flex items-start space-x-3">
@@ -286,13 +291,19 @@ export function AppCard({
               alt={app.name}
               width={48}
               height={48}
-              className="w-12 h-12 rounded-xl object-cover object-center flex-shrink-0"
+              className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
             />
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-base mb-0.5 truncate">
+              <h3
+                className="font-semibold text-base mb-0.5 truncate notranslate app-name-fixed"
+                translate="no"
+              >
                 {app.name}
               </h3>
-              <p className="text-sm text-muted-foreground truncate">
+              <p
+                className="text-sm text-muted-foreground truncate notranslate app-developer-fixed"
+                translate="no"
+              >
                 {app.developer}
               </p>
             </div>
@@ -328,40 +339,42 @@ export function AppCard({
             </div>
           )}
 
-          {/* ✅ 다운로드 섹션 (푸터 대신, 태그랑 붙이고 mt-1로 살짝 띄움) */}
-          <div className="w-full bg-[#84CC9A] px-2 py-2 mt-1">
+          {/* 초록색 다운로드 영역 */}
+          <div className="w-full bg-[#84CC9A] px-2 py-1">
             <div className="flex flex-col items-start space-y-1">
-              {app.status === "published" ? (
-                <Button
-                  size="sm"
-                  className="h-6 px-3 text-xs bg-green-700 hover:bg-green-800 text-white 
-                             flex items-center gap-1 whitespace-nowrap min-w-[120px] justify-start rounded-none"
-                  onClick={handleStoreView}
-                >
-                  <Download className="h-3 w-3" />
-                  {getButtonText()}
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  className="h-6 px-3 text-xs bg-gray-500 text-white flex items-center gap-1 min-w-[120px] justify-start rounded-none"
-                  disabled
-                >
-                  Coming soon
-                </Button>
-              )}
-
-              <Image
-                src={
-                  app.store === "google-play"
-                    ? "/google-play-badge.png"
-                    : "/app-store-badge.png"
-                }
-                alt="스토어 배지"
-                width={100}
-                height={24}
-                className="h-6 object-contain"
-              />
+              <div className="w-full">
+                {app.status === "published" ? (
+                  <Button
+                    size="sm"
+                    className="h-6 px-3 text-xs bg-green-700 hover:bg-green-800 text-white flex items-center gap-1 whitespace-nowrap min-w-[120px] justify-start"
+                    onClick={handleStoreView}
+                  >
+                    <Download className="h-3 w-3" />
+                    {getButtonText()}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    className="h-6 px-3 text-xs bg-gray-500 text-white flex items-center gap-1 min-w-[120px] justify-start"
+                    disabled
+                  >
+                    Coming soon
+                  </Button>
+                )}
+              </div>
+              <div className="h-6">
+                <Image
+                  src={
+                    app.store === "google-play"
+                      ? "/google-play-badge.png"
+                      : "/app-store-badge.png"
+                  }
+                  alt="스토어 배지"
+                  width={100}
+                  height={24}
+                  className="h-6 object-contain"
+                />
+              </div>
             </div>
           </div>
         </CardContent>
@@ -384,3 +397,4 @@ export function AppCard({
     </>
   );
 }
+
