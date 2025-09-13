@@ -57,7 +57,10 @@ const adminTexts = {
 };
 
 interface AdminUploadDialogProps {
-  onUploadAction: (data: AppFormData, files: { icon: File; screenshots: File[] }) => void;
+  // Primary callback (new name preferred for client entry safety)
+  onUploadAction?: (data: AppFormData, files: { icon: File; screenshots: File[] }) => void;
+  // Back-compat: keep supporting onUpload for existing callsites
+  onUpload?: (data: AppFormData, files: { icon: File; screenshots: File[] }) => void;
   buttonProps?: {
     size?: "sm" | "lg" | "default";
     className?: string;
@@ -65,7 +68,7 @@ interface AdminUploadDialogProps {
   buttonText?: string;
 }
 
-export function AdminUploadPublishDialog({ onUploadAction, buttonProps, buttonText = "Upload" }: AdminUploadDialogProps) {
+export function AdminUploadPublishDialog({ onUpload, onUploadAction, buttonProps, buttonText = "Upload" }: AdminUploadDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [password, setPassword] = useState("");
@@ -105,42 +108,35 @@ export function AdminUploadPublishDialog({ onUploadAction, buttonProps, buttonTe
 
 
 
-  // 안전한 아이콘 URL 관리
+  // 안전한 아이콘 URL 관리 (생성/정리)
   useEffect(() => {
-    // 이전 URL 정리
-    if (iconUrl) {
-      urlManager.revokeObjectURL(iconUrl);
+    if (!iconFile || urlManager.isDisposed()) {
       setIconUrl(null);
+      return;
     }
+    const createdUrl = urlManager.createObjectURL(iconFile);
+    setIconUrl(createdUrl);
+    return () => {
+      if (createdUrl) urlManager.revokeObjectURL(createdUrl);
+    };
+  }, [iconFile, urlManager]);
 
-    // 새 URL 생성
-    if (iconFile && !urlManager.isDisposed()) {
-      const url = urlManager.createObjectURL(iconFile);
-      if (url) {
-        setIconUrl(url);
-      }
-    }
-  }, [iconFile, urlManager, iconUrl]);
-
-  // 안전한 스크린샷 URLs 관리
+  // 안전한 스크린샷 URLs 관리 (생성/정리)
   useEffect(() => {
-    // 이전 URLs 정리
-    screenshotUrls.forEach(url => {
-      if (url) {
-        urlManager.revokeObjectURL(url);
-      }
-    });
-    setScreenshotUrls([]);
-    
-    // 새 URLs 생성
-    if (screenshotFiles.length > 0 && !urlManager.isDisposed()) {
-      const urls = screenshotFiles
-        .map(file => urlManager.createObjectURL(file))
-        .filter(url => url !== null) as string[];
-      
-      setScreenshotUrls(urls);
+    if (screenshotFiles.length === 0 || urlManager.isDisposed()) {
+      setScreenshotUrls([]);
+      return;
     }
-  }, [screenshotFiles, urlManager, screenshotUrls]);
+    const urls = screenshotFiles
+      .map(file => urlManager.createObjectURL(file))
+      .filter(url => url !== null) as string[];
+    setScreenshotUrls(urls);
+    return () => {
+      urls.forEach(url => {
+        if (url) urlManager.revokeObjectURL(url);
+      });
+    };
+  }, [screenshotFiles, urlManager]);
 
 
 
@@ -185,13 +181,7 @@ export function AdminUploadPublishDialog({ onUploadAction, buttonProps, buttonTe
       return;
     }
 
-    // onUpload가 제공된 경우, 중복 생성을 방지하기 위해 서버 POST 대신 상위 핸들러에 위임
-    if (onUploadAction) {
-      onUploadAction(formData, {
-        icon: iconFile,
-        screenshots: screenshotFiles,
-      });
-  } else try {
+    try {
       // FormData 생성
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.name);
@@ -199,7 +189,6 @@ export function AdminUploadPublishDialog({ onUploadAction, buttonProps, buttonTe
       formDataToSend.append("author", formData.developer);
       formDataToSend.append("tags", formData.tags || "");
       formDataToSend.append("isPublished", "false"); // 리뷰 상태이므로 false
-      formDataToSend.append("status", "in-review"); // 리뷰 상태 명시
       formDataToSend.append("file", iconFile);
       formDataToSend.append("store", formData.store || "google-play");
       formDataToSend.append("storeUrl", formData.storeUrl || "");
@@ -213,8 +202,15 @@ export function AdminUploadPublishDialog({ onUploadAction, buttonProps, buttonTe
 
       if (response.ok) {
         console.log("✅ 갤러리에 업로드 성공");
+        const cb = onUploadAction || onUpload;
+        if (cb) {
+          cb(formData, {
+            icon: iconFile,
+            screenshots: screenshotFiles,
+          });
+        }
       } else {
-        console.log("❌ 갤러리 업로드 실패");
+        console.warn("❌ 갤러리 업로드 실패");
         alert("업로드에 실패했습니다.");
       }
     } catch {
@@ -616,7 +612,7 @@ export function AdminUploadPublishDialog({ onUploadAction, buttonProps, buttonTe
                if (typeof window !== 'undefined' && window.adminModeChange) {
                  try {
                    window.adminModeChange(false);
-                 } catch {
+                 } catch (error) {
                    // adminModeChange 호출 실패
                  }
                }
