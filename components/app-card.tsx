@@ -288,7 +288,7 @@ export function AppCard({ app, viewMode, onDelete, onEdit, onToggleFeatured, onT
           </div>
 
           {/* Rating and Stats */}
-          <div className="flex items-center justify-between text-sm text-muted-foreground mb-1">
+          <div className="flex items-center justify-between text-sm text-muted-foreground mb-0">
             <div className="flex items-center space-x-3">
               <div className="flex items-center gap-1">
                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -317,7 +317,7 @@ export function AppCard({ app, viewMode, onDelete, onEdit, onToggleFeatured, onT
         </CardContent>
 
         {/* Download Section - CardContent 밖으로 이동 */}
-        <div className="w-full bg-[#84CC9A] border-t border-gray-300 px-3 py-1">
+        <div className="w-full bg-[#84CC9A] border-t border-gray-300 px-3 py-0.5 -mt-1">
           <div className="flex flex-col items-start space-y-0">
             {/* 하단 2줄 - 다운로드 버튼 */}
             <div className="w-full">
