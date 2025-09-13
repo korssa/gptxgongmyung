@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -56,7 +57,7 @@ const adminTexts = {
 };
 
 interface AdminUploadDialogProps {
-  onUpload: (data: AppFormData, files: { icon: File; screenshots: File[] }) => void;
+  onUploadAction: (data: AppFormData, files: { icon: File; screenshots: File[] }) => void;
   buttonProps?: {
     size?: "sm" | "lg" | "default";
     className?: string;
@@ -64,7 +65,7 @@ interface AdminUploadDialogProps {
   buttonText?: string;
 }
 
-export function AdminUploadPublishDialog({ onUpload, buttonProps, buttonText = "Upload" }: AdminUploadDialogProps) {
+export function AdminUploadPublishDialog({ onUploadAction, buttonProps, buttonText = "Upload" }: AdminUploadDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [password, setPassword] = useState("");
@@ -119,7 +120,7 @@ export function AdminUploadPublishDialog({ onUpload, buttonProps, buttonText = "
         setIconUrl(url);
       }
     }
-  }, [iconFile, urlManager]);
+  }, [iconFile, urlManager, iconUrl]);
 
   // 안전한 스크린샷 URLs 관리
   useEffect(() => {
@@ -139,7 +140,7 @@ export function AdminUploadPublishDialog({ onUpload, buttonProps, buttonText = "
       
       setScreenshotUrls(urls);
     }
-  }, [screenshotFiles, urlManager]);
+  }, [screenshotFiles, urlManager, screenshotUrls]);
 
 
 
@@ -153,7 +154,7 @@ export function AdminUploadPublishDialog({ onUpload, buttonProps, buttonText = "
        if (typeof window !== 'undefined' && window.adminModeChange) {
          try {
            window.adminModeChange(true);
-         } catch (error) {
+         } catch {
            // adminModeChange 호출 실패
          }
        }
@@ -185,12 +186,12 @@ export function AdminUploadPublishDialog({ onUpload, buttonProps, buttonText = "
     }
 
     // onUpload가 제공된 경우, 중복 생성을 방지하기 위해 서버 POST 대신 상위 핸들러에 위임
-    if (onUpload) {
-      onUpload(formData, {
+    if (onUploadAction) {
+      onUploadAction(formData, {
         icon: iconFile,
         screenshots: screenshotFiles,
       });
-    } else try {
+  } else try {
       // FormData 생성
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.name);
@@ -211,12 +212,12 @@ export function AdminUploadPublishDialog({ onUpload, buttonProps, buttonText = "
       });
 
       if (response.ok) {
-("✅ 갤러리에 업로드 성공");
+        console.log("✅ 갤러리에 업로드 성공");
       } else {
-("❌ 갤러리 업로드 실패");
+        console.log("❌ 갤러리 업로드 실패");
         alert("업로드에 실패했습니다.");
       }
-    } catch (error) {
+    } catch {
       alert("업로드 중 오류가 발생했습니다.");
     }
 
@@ -384,7 +385,7 @@ export function AdminUploadPublishDialog({ onUpload, buttonProps, buttonText = "
                       const nextIndex = (currentIndex + 1) % stores.length;
                       const newStore = stores[nextIndex];
                       setFormData(prev => ({ ...prev, store: newStore }));
-                    } catch (error) {
+                    } catch {
                       // Store change error
                     }
                   }}
@@ -419,7 +420,7 @@ export function AdminUploadPublishDialog({ onUpload, buttonProps, buttonText = "
                       const nextIndex = (currentIndex + 1) % statuses.length;
                       const newStatus = statuses[nextIndex];
                       setFormData(prev => ({ ...prev, status: newStatus }));
-                    } catch (error) {
+                    } catch {
                       // Status change error
                     }
                   }}
@@ -615,7 +616,7 @@ export function AdminUploadPublishDialog({ onUpload, buttonProps, buttonText = "
                if (typeof window !== 'undefined' && window.adminModeChange) {
                  try {
                    window.adminModeChange(false);
-                 } catch (error) {
+                 } catch {
                    // adminModeChange 호출 실패
                  }
                }
