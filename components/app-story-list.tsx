@@ -865,4 +865,3 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
     </div>
   );
 }
-
