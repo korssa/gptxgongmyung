@@ -317,7 +317,7 @@ export function AppCard({ app, viewMode, onDelete, onEdit, onToggleFeatured, onT
         </CardContent>
 
         {/* Download Section - CardContent 밖으로 이동 */}
-        <div className="w-full bg-[#84CC9A] border-t border-gray-300 px-3 py-0.5 -mt-1">
+  <div className="w-full bg-[#84CC9A] border-t border-gray-300 px-3 py-0 -mt-2">
           <div className="flex flex-col items-start space-y-0">
             {/* 하단 2줄 - 다운로드 버튼 */}
             <div className="w-full">
