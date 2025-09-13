@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -110,28 +111,36 @@ export function AdminUploadDialog({
   const { isAuthenticated, login, logout } = useAdmin();
 
   useEffect(() => {
+    // cleanup previous url
     if (iconUrl) {
       urlManager.revokeObjectURL(iconUrl);
-      setIconUrl(null);
     }
+    let nextUrl: string | null = null;
     if (iconFile && !urlManager.isDisposed()) {
-      const url = urlManager.createObjectURL(iconFile);
-      if (url) setIconUrl(url);
+      nextUrl = urlManager.createObjectURL(iconFile);
     }
-  }, [iconFile, urlManager]);
+    setIconUrl(nextUrl);
+    return () => {
+      if (nextUrl) urlManager.revokeObjectURL(nextUrl);
+    };
+  }, [iconFile, urlManager, iconUrl]);
 
   useEffect(() => {
+    // cleanup previous urls
     screenshotUrls.forEach((url) => {
       if (url) urlManager.revokeObjectURL(url);
     });
-    setScreenshotUrls([]);
+    let urls: string[] = [];
     if (screenshotFiles.length > 0 && !urlManager.isDisposed()) {
-      const urls = screenshotFiles
+      urls = screenshotFiles
         .map((file) => urlManager.createObjectURL(file))
-        .filter((url) => url !== null) as string[];
-      setScreenshotUrls(urls);
+        .filter((url): url is string => url !== null);
     }
-  }, [screenshotFiles, urlManager]);
+    setScreenshotUrls(urls);
+    return () => {
+      urls.forEach((url) => urlManager.revokeObjectURL(url));
+    };
+  }, [screenshotFiles, urlManager, screenshotUrls]);
 
   const handleLogin = () => {
     if (login(password)) {
@@ -191,7 +200,7 @@ export function AdminUploadDialog({
         } else {
           alert("업로드에 실패했습니다.");
         }
-      } catch (error) {
+      } catch {
         alert("업로드 중 오류가 발생했습니다.");
       }
     } else if (onUpload) {
