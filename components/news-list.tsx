@@ -735,14 +735,14 @@ export function NewsList({ type, onBack }: NewsListProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {contents.map((content) => (
-                     <Card
-             key={content.id}
-             className="bg-gray-800/50 border-2 border-gray-700 hover:border-amber-400/70 hover:bg-gray-800/80 transition-all duration-300 cursor-pointer group"
-             onClick={() => {
-               setSelected(content);
-               blockTranslationFeedback();
-             }}
-           >
+          <div key={content.id} className="w-full max-w-[256px] mx-auto">
+            <Card
+              className="bg-gray-800/50 border-2 border-gray-700 hover:border-amber-400/70 hover:bg-gray-800/80 transition-all duration-300 cursor-pointer group"
+              onClick={() => {
+                setSelected(content);
+                blockTranslationFeedback();
+              }}
+            >
             <CardHeader className="pb-3">
               {content.imageUrl && (
                 <div className="mb-3">
@@ -801,7 +801,8 @@ export function NewsList({ type, onBack }: NewsListProps) {
               </div>
               )}
             </CardContent>
-          </Card>
+            </Card>
+          </div>
         ))}
       </div>
     </div>
