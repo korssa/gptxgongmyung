@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,13 +20,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, EyeOff, Eye, Calendar, User, FileText, ArrowLeft, Home } from "lucide-react";
+import { Plus, Edit, Trash2, EyeOff, Eye, Calendar, User, ArrowLeft, Home } from "lucide-react";
 import { ContentItem, ContentFormData, ContentType } from "@/types";
 import { useAdmin } from "@/hooks/use-admin";
 import { uploadFile } from "@/lib/storage-adapter";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
-import { loadContentsFromBlob, loadContentsByTypeFromBlob } from "@/lib/data-loader";
+import { loadContentsByTypeFromBlob } from "@/lib/data-loader";
 import { loadMemoDraft, saveMemoDraft, clearMemoDraft } from "@/lib/memo-storage";
 import Link from "next/link";
 
@@ -83,8 +83,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
         isPublished: typeof draft.isPublished === 'boolean' ? draft.isPublished : prev.isPublished,
       }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type]);
+  }, [type, isAuthenticated]);
 
       // 폼 변경 즉시 저장
     useEffect(() => {
@@ -116,7 +115,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
           // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
           setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
         }
-      } catch (err) {
+      } catch {
         // Failed to load contents
       } finally {
         setLoading(false);
@@ -161,7 +160,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
     blockTranslationFeedback();
 
     return () => observer.disconnect();
-  }, [type]);
+  }, [type, isAuthenticated]);
 
   // 폼 초기화
   const resetForm = () => {
@@ -221,7 +220,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       if (selectedImage) {
         try {
           imageUrl = await uploadFile(selectedImage, 'content-images');
-        } catch (error) {
+        } catch {
           throw new Error('이미지 업로드에 실패했습니다.');
         }
       }
@@ -239,7 +238,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        await response.json();
         
         setIsDialogOpen(false);
         clearMemoDraft(type);
@@ -253,7 +252,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
             // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
             setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
           }
-              } catch (error) {
+              } catch {
         // 목록 새로고침 실패
       }
         
@@ -264,7 +263,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
         let errorData;
         try {
           errorData = JSON.parse(responseText);
-        } catch (parseError) {
+        } catch {
           errorData = { error: responseText || '알 수 없는 오류' };
         }
         
@@ -286,7 +285,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       });
 
       if (response.ok) {
-(`✅ ${type} 삭제 완료: ${id}`);
+        console.log(`✅ ${type} 삭제 완료: ${id}`);
         // 콘텐츠 목록 다시 로드 (타입별로 정확히 필터링)
         try {
           const res = await fetch(`/api/content?type=${type}`);
@@ -295,8 +294,8 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
             // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
             setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
           }
-        } catch (error) {
-          console.error('삭제 후 목록 새로고침 실패:', error);
+        } catch {
+          // 삭제 후 목록 새로고침 실패
         }
         
         alert('App Story가 삭제되었습니다.');
@@ -341,7 +340,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
             // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
             setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
           }
-              } catch (error) {
+              } catch {
         // 토글 후 목록 새로고침 실패
       }
       }
