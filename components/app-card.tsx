@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Star, User, Download } from "lucide-react";
@@ -11,56 +11,56 @@ import { useAdmin } from "@/hooks/use-admin";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
 import { AdminCardActionsDialog } from "./admin-card-actions-dialog";
 import Image from "next/image";
-  return (
-    <>
-      <Card
-        className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-[320px] flex flex-col"
-        style={{ backgroundColor: '#D1E2EA' }}
-        onMouseEnter={blockTranslationFeedback}
-      >
-        <div className="relative h-32">
-          {/* Screenshot/App Preview (fixed height) */}
-          <div className="absolute inset-0 overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50">
-            {app.screenshotUrls && app.screenshotUrls.length > 0 ? (
-              <Image
-                src={app.screenshotUrls[0]}
-                alt={app.name}
-                fill
-                unoptimized={isBlobUrl(app.screenshotUrls?.[0])}
-                className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
-              />
-            ) : (
-              <div className="absolute inset-0 w-full h-full flex items-center justify-center text-4xl">
-                📱
-              </div>
-            )}
-          </div>
 
-          {/* Store Badge */}
-          <div className="absolute bottom-2 left-2">
-            <Badge className={`${getStatusColor(app.status)} text-white text-xs`}>
-              {app.status}
-            </Badge>
-          </div>
+interface AppCardProps {
+  app: AppItem;
+  viewMode: "grid" | "list";
+  onDelete?: (id: string) => void;
+  onEdit?: (app: AppItem) => void;
+  onToggleFeatured?: (id: string) => void;
+  onToggleEvent?: (id: string) => void;
+  onUpdateAdminStoreUrl?: (id: string, adminStoreUrl: string) => void; // 관리자 링크 업데이트
+  isFeatured?: boolean;
+  isEvent?: boolean;
+  onRefreshData?: () => Promise<void>; // 추가: 데이터 리로드 콜백
+  onCleanData?: () => Promise<void>; // 추가: 데이터 정리 콜백
+}
 
-          {/* Admin Actions Button - 호버 시 표시 */}
-          {isAuthenticated && (
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" onMouseEnter={blockTranslationFeedback}>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleAdminActions}
-                className="h-8 w-8 p-0 shadow-lg bg-blue-600 hover:bg-blue-700 text-white"
-                title="관리자 모드 열기"
-                onMouseEnter={blockTranslationFeedback}
-              >
-                ⚙️
-              </Button>
-            </div>
-          )}
-        </div>
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "published":
+      return "bg-green-500";
+    case "in-review":
+      return "bg-yellow-500";
+    case "development":
+      return "bg-blue-500";
+    default:
+      return "bg-gray-500";
+  }
+};
 
-        <CardContent className="px-2 py-0 flex-1" style={{ backgroundColor: '#D1E2EA' }}>
+export function AppCard({ app, viewMode, onDelete, onEdit, onToggleFeatured, onToggleEvent, onUpdateAdminStoreUrl, isFeatured = false, isEvent = false, onRefreshData, onCleanData }: AppCardProps) {
+  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+  const { t } = useLanguage();
+  const { isAuthenticated } = useAdmin();
+
+  const isBlobUrl = (url?: string) => {
+    return !!url && (url.includes('vercel-storage.com') || url.includes('blob.vercel-storage.com'));
+  };
+
+  const handleStoreView = () => {
+    // Events 앱이면 memo2로 이동, 아니면 기존 로직 사용
+    if (isEvent) {
+      // 모든 이벤트 카드는 memo2로 연결
+      window.location.href = '/memo2';
+    } else {
+      // 일반 앱은 기존 로직 사용
+      const urlToUse = app.storeUrl;
+      if (urlToUse) {
+        window.open(urlToUse, '_blank');
+      }
+    }
+  };
 
   // 버튼 텍스트 결정 함수
   const getButtonText = () => {
@@ -132,7 +132,7 @@ import Image from "next/image";
                   <span>{app.uploadDate}</span>
                 </div>
 
-                {app.tags && app.tags.length > 0 && (
+                {app.tags && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {app.tags.map((tag, index) => (
                       <Badge key={index} variant="secondary" className="text-xs">
@@ -316,9 +316,9 @@ import Image from "next/image";
           )}
         </CardContent>
 
-        {/* Download Section - use CardFooter for consistent layout */}
-        <CardFooter className="w-full bg-[#84CC9A] border-t border-gray-300 px-4 py-2">
-          <div className="flex flex-col items-start space-y-1 w-full">
+        {/* Download Section - CardContent 밖으로 이동 */}
+        <div className="w-full bg-[#84CC9A] border-t border-gray-300 px-4 py-2">
+          <div className="flex flex-col items-start space-y-1">
             {/* 하단 2줄 - 다운로드 버튼 */}
             <div className="w-full">
               {app.status === "published" ? (
@@ -352,7 +352,7 @@ import Image from "next/image";
               />
             </div>
           </div>
-        </CardFooter>
+        </div>
       </Card>
 
       {/* 관리자 모드 다이얼로그 */}
