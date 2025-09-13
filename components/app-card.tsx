@@ -221,7 +221,7 @@ export function AppCard({ app, viewMode, onDelete, onEdit, onToggleFeatured, onT
   return (
     <>
       <Card
-        className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+        className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 max-w-[256px] w-full"
         style={{ backgroundColor: '#D1E2EA' }}
         onMouseEnter={blockTranslationFeedback}
       >
