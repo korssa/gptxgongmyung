@@ -31,7 +31,6 @@ export function GalleryManager({
   isAdmin = false,
 }: GalleryManagerProps) {
   const [items, setItems] = useState<AppItem[]>([]);
-  const [likes, setLikes] = useState<{ [key: string]: number }>({});
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   // Admin upload dialog states (featured/events 전용)
@@ -63,8 +62,6 @@ export function GalleryManager({
 
   useEffect(() => {
     loadItems();
-    const savedLikes = localStorage.getItem(`gallery-likes-${type}`);
-    if (savedLikes) setLikes(JSON.parse(savedLikes));
     // 타입 변경 시 첫 페이지로 리셋
     setCurrentPage(1);
   }, [type, loadItems]);
@@ -161,8 +158,8 @@ export function GalleryManager({
         </Button>
       )}
 
-  {/* 카드 그리드 (이전 레이아웃 복원) */}
-  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 justify-items-center">
+  {/* 카드 그리드: 항상 1열 유지 */}
+  <div className="grid grid-cols-1 gap-6 justify-items-center">
         {currentItems.length === 0 ? (
           type !== "normal" && (
             <div className="col-span-full">
@@ -177,7 +174,7 @@ export function GalleryManager({
           )
         ) : (
           currentItems.map((item) => (
-            <div key={item.id} className="relative mx-auto">
+            <div key={item.id} className="relative w-[340px] mx-auto">
             <Card
               className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
               style={{ backgroundColor: "#D1E2EA" }}
