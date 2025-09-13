@@ -220,7 +220,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       if (selectedImage) {
         try {
           imageUrl = await uploadFile(selectedImage, 'content-images');
-        } catch {
+        } catch (error) {
           throw new Error('이미지 업로드에 실패했습니다.');
         }
       }
@@ -294,8 +294,8 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
             // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
             setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
           }
-        } catch {
-          // 삭제 후 목록 새로고침 실패
+        } catch (error) {
+          console.error('삭제 후 목록 새로고침 실패:', error);
         }
         
         alert('App Story가 삭제되었습니다.');
