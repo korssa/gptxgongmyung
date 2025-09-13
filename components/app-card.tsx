@@ -14,7 +14,7 @@ import Image from "next/image";
 
 interface AppCardProps {
   app: AppItem;
-  viewMode: "grid" | "list";
+  viewMode: "grid" | "list" | "mini";
   onDelete?: (id: string) => void;
   onEdit?: (app: AppItem) => void;
   onToggleFeatured?: (id: string) => void;
@@ -72,6 +72,68 @@ export function AppCard({ app, viewMode, onDelete, onEdit, onToggleFeatured, onT
     }
     return "Download";
   };
+  // Mini view: compact horizontal card for scrollers
+  if (viewMode === "mini") {
+    return (
+      <>
+        <Card
+          className="w-[170px] aspect-[3/4] flex-shrink-0 p-2 bg-white shadow group overflow-hidden"
+          onMouseEnter={blockTranslationFeedback}
+        >
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-center">
+              <Image
+                src={app.iconUrl}
+                alt={app.name}
+                width={80}
+                height={80}
+                unoptimized={isBlobUrl(app.iconUrl)}
+                className="rounded-md"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNmM2Y0ZjYiLz48cGF0aCBkPSJNMzkgMjhDMzQuNzggMjggMzEgMzEuNzggMzEgMzZDMzEgNDAuMjIgMzQuNzggNDQgMzkgNDRDNDUuNjYgNDQgNTEgMzguNjYgNTEgMzJDNTEgMjUuMzQgNDUuNjYgMjAgMzkgMjBaIiBmaWxsPSIjOWNhM2FmIi8+PC9zdmc+";
+                }}
+              />
+            </div>
+            <h3 className="text-base font-bold text-center mt-2 truncate notranslate app-name-fixed" translate="no">{app.name}</h3>
+            <p className="text-sm text-muted-foreground text-center truncate notranslate app-developer-fixed" translate="no">{app.developer}</p>
+            <div className="mt-auto">
+              {app.status === "published" ? (
+                <Button
+                  size="sm"
+                  className="w-full h-6 mt-2 text-xs bg-green-700 hover:bg-green-800 text-white flex items-center justify-center gap-1"
+                  onClick={handleStoreView}
+                >
+                  <Download className="h-3 w-3" />
+                  {getButtonText()}
+                </Button>
+              ) : (
+                <Button size="sm" className="w-full h-6 mt-2 text-xs bg-gray-500 text-white" disabled>
+                  Coming soon
+                </Button>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {/* 관리자 모드 다이얼로그 */}
+        <AdminCardActionsDialog
+          app={app}
+          isOpen={isAdminDialogOpen}
+          onClose={() => setIsAdminDialogOpen(false)}
+          onDelete={onDelete}
+          onEdit={onEdit}
+          onToggleFeatured={onToggleFeatured}
+          onToggleEvent={onToggleEvent}
+          onUpdateAdminStoreUrl={onUpdateAdminStoreUrl}
+          isFeatured={isFeatured}
+          isEvent={isEvent}
+          onRefreshData={onRefreshData}
+          onCleanData={onCleanData}
+        />
+      </>
+    );
+  }
 
 
   // 호버 심볼 클릭 시 관리자 다이얼로그 열기
