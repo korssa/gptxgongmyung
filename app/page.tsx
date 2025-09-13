@@ -859,7 +859,7 @@ function HomeContent() {
                </div>
               
                              <div className="flex justify-center px-4 max-w-4xl mx-auto">
-                 <div className="relative group w-full max-w-sm">
+                <div className="relative group w-full max-w-[256px]">
                    {/* 화려한 테두리 효과 */}
                    <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
                    <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse" style={{animationDelay: '0.5s'}}></div>
@@ -1298,7 +1298,7 @@ function HomeContent() {
 />
 
 <AdminUploadPublishDialog
-  onUpload={handleAppUpload}
+  onUploadAction={handleAppUpload}
   buttonProps={{
     size: "lg",
     className: "gap-2 text-white bg-orange-600 hover:bg-orange-700",
