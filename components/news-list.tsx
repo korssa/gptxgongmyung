@@ -745,11 +745,11 @@ export function NewsList({ type, onBack }: NewsListProps) {
            >
             <CardHeader className="pb-3">
               {content.imageUrl && (
-                <div className="mb-3">
+                <div className="mb-3 h-28 md:h-32 overflow-hidden rounded-lg">
                   <img
                     src={content.imageUrl}
                     alt={content.title}
-                    className="w-full h-auto rounded-lg"
+                    className="w-full h-full object-cover"
                   />
                 </div>
               )}
@@ -807,4 +807,3 @@ export function NewsList({ type, onBack }: NewsListProps) {
     </div>
   );
 }
-
