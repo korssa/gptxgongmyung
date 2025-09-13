@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable @next/next/no-img-element */
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -111,36 +110,28 @@ export function AdminUploadDialog({
   const { isAuthenticated, login, logout } = useAdmin();
 
   useEffect(() => {
-    // cleanup previous url
     if (iconUrl) {
       urlManager.revokeObjectURL(iconUrl);
+      setIconUrl(null);
     }
-    let nextUrl: string | null = null;
     if (iconFile && !urlManager.isDisposed()) {
-      nextUrl = urlManager.createObjectURL(iconFile);
+      const url = urlManager.createObjectURL(iconFile);
+      if (url) setIconUrl(url);
     }
-    setIconUrl(nextUrl);
-    return () => {
-      if (nextUrl) urlManager.revokeObjectURL(nextUrl);
-    };
-  }, [iconFile, urlManager, iconUrl]);
+  }, [iconFile, urlManager]);
 
   useEffect(() => {
-    // cleanup previous urls
     screenshotUrls.forEach((url) => {
       if (url) urlManager.revokeObjectURL(url);
     });
-    let urls: string[] = [];
+    setScreenshotUrls([]);
     if (screenshotFiles.length > 0 && !urlManager.isDisposed()) {
-      urls = screenshotFiles
+      const urls = screenshotFiles
         .map((file) => urlManager.createObjectURL(file))
-        .filter((url): url is string => url !== null);
+        .filter((url) => url !== null) as string[];
+      setScreenshotUrls(urls);
     }
-    setScreenshotUrls(urls);
-    return () => {
-      urls.forEach((url) => urlManager.revokeObjectURL(url));
-    };
-  }, [screenshotFiles, urlManager, screenshotUrls]);
+  }, [screenshotFiles, urlManager]);
 
   const handleLogin = () => {
     if (login(password)) {
@@ -200,12 +191,36 @@ export function AdminUploadDialog({
         } else {
           alert("업로드에 실패했습니다.");
         }
-      } catch {
+      } catch (error) {
         alert("업로드 중 오류가 발생했습니다.");
       }
     } else if (onUpload) {
-      // 중복 생성을 막기 위해 서버 POST 대신 상위 onUpload 핸들러에 위임
-      onUpload(formData, { icon: iconFile, screenshots: screenshotFiles });
+      // targetGallery가 없으면 /api/gallery API를 직접 호출 (type=normal로 All Apps에 저장)
+      try {
+        const formDataToSend = new FormData();
+        formDataToSend.append("file", iconFile);
+        formDataToSend.append("title", formData.name);
+        formDataToSend.append("content", formData.description || "");
+        formDataToSend.append("author", formData.developer);
+        formDataToSend.append("tags", formData.tags || "");
+        formDataToSend.append("isPublished", "true");
+        formDataToSend.append("store", formData.store || "google-play");
+        formDataToSend.append("storeUrl", formData.storeUrl || "");
+        formDataToSend.append("appCategory", formData.appCategory || "normal");
+
+        const response = await fetch(`/api/gallery?type=normal`, {
+          method: "POST",
+          body: formDataToSend,
+        });
+
+        if (response.ok) {
+          onUpload(formData, { icon: iconFile, screenshots: screenshotFiles });
+        } else {
+          alert("업로드에 실패했습니다.");
+        }
+      } catch (error) {
+        alert("업로드 중 오류가 발생했습니다.");
+      }
     }
 
     setIsOpen(false);
