@@ -33,6 +33,25 @@ export function GalleryManager({
   const [isEventsDialogOpen, setEventsDialogOpen] = useState(false);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
 
+  // Scroll helper: mobile (<640px) -> one card per click; otherwise ~viewport width
+  const scrollByStep = (dir: -1 | 1) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
+    let amount = 0;
+    if (isMobile) {
+      const firstItem = el.firstElementChild as HTMLElement | null;
+      const itemWidth = firstItem?.offsetWidth ?? 170; // fallback to our card width
+      const styles = getComputedStyle(el);
+      const gapStr = (styles.columnGap || styles.gap || "0").toString();
+      const gap = parseFloat(gapStr);
+      amount = itemWidth + (Number.isFinite(gap) ? gap : 0);
+    } else {
+      amount = Math.max(320, Math.floor(el.clientWidth * 0.9));
+    }
+    el.scrollBy({ left: dir * amount, behavior: "smooth" });
+  };
+
   const loadItems = useCallback(async () => {
     try {
       const response = await fetch(`/api/gallery?type=${type}`);
@@ -315,24 +334,14 @@ export function GalleryManager({
         <Button
           aria-label="왼쪽으로 스크롤"
           className="rounded-full px-4 py-2 text-xl font-bold bg-[#D4AF37] text-black hover:bg-[#B9931E] focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
-          onClick={() => {
-            const el = scrollerRef.current;
-            if (!el) return;
-            const amount = Math.max(320, Math.floor(el.clientWidth * 0.9));
-            el.scrollBy({ left: -amount, behavior: "smooth" });
-          }}
+          onClick={() => scrollByStep(-1)}
         >
           &lt;
         </Button>
         <Button
           aria-label="오른쪽으로 스크롤"
           className="rounded-full px-4 py-2 text-xl font-bold bg-[#D4AF37] text-black hover:bg-[#B9931E] focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
-          onClick={() => {
-            const el = scrollerRef.current;
-            if (!el) return;
-            const amount = Math.max(320, Math.floor(el.clientWidth * 0.9));
-            el.scrollBy({ left: amount, behavior: "smooth" });
-          }}
+          onClick={() => scrollByStep(1)}
         >
           &gt;
         </Button>
