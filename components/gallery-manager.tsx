@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Trash2, Edit, Star, Download } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, Star, Download, User } from "lucide-react";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
 import { AdminFeaturedUploadDialog } from "./admin-featured-upload-dialog";
 import { AdminEventsUploadDialog } from "./admin-events-upload-dialog";
@@ -170,7 +170,7 @@ export function GalleryManager({
           items.map((item, index) => (
             <Card
               key={item.id}
-              className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 w-[170px] flex-shrink-0"
+              className={`group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 w-[170px] flex-shrink-0 ${type === "featured" ? "relative featured-glow-card" : ""}`}
               style={{ backgroundColor: "#D1E2EA" }}
               onMouseEnter={blockTranslationFeedback}
             >
@@ -301,18 +301,33 @@ export function GalleryManager({
                   {/* Download Button */}
                   <div className="w-full">
                     {item.status === "published" ? (
-                      <Button
-                        size="sm"
-                        className="h-8 px-4 text-sm bg-green-700 hover:bg-green-800 text-white flex items-center gap-1 whitespace-nowrap min-w-[120px] justify-start"
-                        onClick={() => {
-                          if (item.storeUrl) {
-                            window.open(item.storeUrl, "_blank");
-                          }
-                        }}
-                      >
-                        <Download className="h-4 w-4" />
-                        Download
-                      </Button>
+                      type === "events" ? (
+                        <Button
+                          size="sm"
+                          className="h-8 px-4 text-sm bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1 whitespace-nowrap min-w-[120px] justify-start"
+                          onClick={() => {
+                            if (item.storeUrl) {
+                              window.open(item.storeUrl, "_blank");
+                            }
+                          }}
+                        >
+                          <User className="h-4 w-4" />
+                          See App
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="h-8 px-4 text-sm bg-green-700 hover:bg-green-800 text-white flex items-center gap-1 whitespace-nowrap min-w-[120px] justify-start"
+                          onClick={() => {
+                            if (item.storeUrl) {
+                              window.open(item.storeUrl, "_blank");
+                            }
+                          }}
+                        >
+                          <Download className="h-4 w-4" />
+                          Download
+                        </Button>
+                      )
                     ) : (
                       <Button
                         size="sm"
