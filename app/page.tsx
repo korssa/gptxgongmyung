@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 declare global {
   interface Window {
@@ -99,8 +99,17 @@ function HomeContent() {
   // 최신 앱 로드 - allApps가 로드된 후 실행
   useEffect(() => {
     if (allApps.length > 0) {
-      const latestApp = getLatestApp();
-      setLatestApp(latestApp);
+      try {
+        const publishedApps = allApps
+          .filter(app => app.status === "published")
+          .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
+        setLatestApp(publishedApps[0] || null);
+      } catch (error) {
+        console.error('최신 앱 조회 실패:', error);
+        setLatestApp(null);
+      }
+    } else {
+      setLatestApp(null);
     }
   }, [allApps]);
 
@@ -268,21 +277,7 @@ function HomeContent() {
 
 
 
-   // New Release 앱을 가져오는 별도 함수
-  const getLatestApp = () => {
-    try {
-      // allApps에서 가장 최근 퍼블리시한 앱 가져오기
-      const publishedApps = allApps
-        .filter(app => app.status === "published")
-        .sort((a, b) => 
-          new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
-        );
-        return publishedApps[0] || null; // 가장 최근 퍼블리시한 앱 1개만 반환
-    } catch (error) {
-      console.error('최신 앱 조회 실패:', error);
-      return null;
-    }
-  };
+  // (removed) separate getLatestApp helper; inlined in effect above
 
   const handleAppUpload = async (data: AppFormData, files: { icon: File; screenshots: File[] }) => {
     try {
@@ -419,7 +414,7 @@ function HomeContent() {
         });
 
         if (deleteResponse.ok) {
-          const deleteResult = await deleteResponse.json();
+          // await deleteResponse.json(); // no need to use response body
           deleteSuccess = true;
         } else {
           console.error('❌ 앱 삭제 API 실패:', deleteResponse.status);
@@ -442,8 +437,8 @@ function HomeContent() {
       if (deleteSuccess) {
         setAllApps(newApps);
         setFeaturedIds(newFeaturedApps);
-        setEventIds(newEventApps);
-('✅ 앱 삭제 완료 및 로컬 상태 업데이트');
+  setEventIds(newEventApps);
+  console.log('✅ 앱 삭제 완료 및 로컬 상태 업데이트');
       } else {
         console.error('❌ 앱 삭제 실패 - 로컬 상태 업데이트 안함');
       }
@@ -685,8 +680,7 @@ function HomeContent() {
         });
 
         if (updateResponse.ok) {
-          const updateResult = await updateResponse.json();
-          
+          // await updateResponse.json(); // no need to use response body
           // 로컬 상태 업데이트
           setAllApps(newApps);
         } else {
@@ -840,28 +834,29 @@ function HomeContent() {
                    {/* 메인 카드 - 기존 갤러리 카드와 완전히 동일한 반응형 사이즈 */}
                    <div className="relative group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 new-release-card w-full" style={{ backgroundColor: '#D1E2EA' }} onMouseEnter={blockTranslationFeedback} onClick={(e) => e.stopPropagation()}>
                      <div className="relative">
-                                               {/* Screenshot/App Preview */}
-                        <div className="aspect-[9/16] sm:aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
-                          {latestApp.screenshotUrls && latestApp.screenshotUrls.length > 0 ? (
-                                                         <Image
+                       {/* Screenshot/App Preview: 2/3 on mobile, full on sm+ */}
+                       <div className="w-2/3 sm:w-full mx-auto">
+                         <div className="aspect-[9/16] sm:aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
+                           {latestApp.screenshotUrls && latestApp.screenshotUrls.length > 0 ? (
+                             <Image
                                src={latestApp.screenshotUrls[0]}
                                alt={latestApp.name}
                                fill
                                unoptimized={isBlobUrl(latestApp.screenshotUrls[0])}
                                className="object-cover object-center"
                              />
-                          ) : (
-                            <div className="absolute inset-0 w-full h-full flex items-center justify-center text-6xl">
-                              📱
-                            </div>
-                          )}
-                        </div>
-
-                       {/* Store Badge */}
-                       <div className="absolute bottom-2 left-2">
-                         <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
-                           {t(latestApp.status as keyof typeof t)}
-                         </span>
+                           ) : (
+                             <div className="absolute inset-0 w-full h-full flex items-center justify-center text-6xl">
+                               📱
+                             </div>
+                           )}
+                           {/* Status Badge (overlay on screenshot) */}
+                           <div className="absolute bottom-1 left-1">
+                             <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
+                               {t(latestApp.status as keyof typeof t)}
+                             </span>
+                           </div>
+                         </div>
                        </div>
                      </div>
 
