@@ -32,24 +32,85 @@ export function GalleryManager({
   const [isFeaturedDialogOpen, setFeaturedDialogOpen] = useState(false);
   const [isEventsDialogOpen, setEventsDialogOpen] = useState(false);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  const scrollAnimRef = useRef<number | null>(null);
+  const scrollStateRef = useRef<{
+    start: number;
+    from: number;
+    to: number;
+    duration: number;
+    lastTs?: number;
+  } | null>(null);
 
-  // Scroll helper: mobile (<640px) -> one card per click; otherwise ~viewport width
+  // Cancel any ongoing RAF scroll animation
+  const cancelScrollAnimation = () => {
+    if (scrollAnimRef.current != null) {
+      cancelAnimationFrame(scrollAnimRef.current);
+      scrollAnimRef.current = null;
+    }
+    scrollStateRef.current = null;
+  };
+
+  // Scroll helper with delta-time based animation for smooth and consistent speed
+  // mobile (<640px) -> one card per click; otherwise ~viewport width
   const scrollByStep = (dir: -1 | 1) => {
     const el = scrollerRef.current;
     if (!el) return;
+
+    // Determine distance to travel
     const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
     let amount = 0;
     if (isMobile) {
       const firstItem = el.firstElementChild as HTMLElement | null;
       const itemWidth = firstItem?.offsetWidth ?? 170; // fallback to our card width
       const styles = getComputedStyle(el);
-      const gapStr = (styles.columnGap || styles.gap || "0").toString();
+      const gapStr = (styles.columnGap || (styles as any).gap || "0").toString();
       const gap = parseFloat(gapStr);
       amount = itemWidth + (Number.isFinite(gap) ? gap : 0);
     } else {
       amount = Math.max(320, Math.floor(el.clientWidth * 0.9));
     }
-    el.scrollBy({ left: dir * amount, behavior: "smooth" });
+
+    // Set up animation state
+    const from = el.scrollLeft;
+    const to = from + dir * amount;
+
+    // Cancel prior animation if any
+    cancelScrollAnimation();
+
+    // Duration tuned by distance (px per second ~ 1600)
+    const pxPerSecond = 1600; // adjust for preferred speed
+    const duration = Math.max(220, Math.min(600, Math.abs(amount) / pxPerSecond * 1000));
+
+    scrollStateRef.current = {
+      start: performance.now(),
+      from,
+      to,
+      duration,
+    };
+
+    const easeInOutQuad = (t: number) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t);
+
+    const step = (ts: number) => {
+      if (!scrollStateRef.current) return;
+      const { start, from, to, duration } = scrollStateRef.current;
+      // deltaTime in ms (not strictly needed for absolute-time easing, but kept for clarity)
+      const dt = scrollStateRef.current.lastTs != null ? ts - scrollStateRef.current.lastTs : 0;
+      scrollStateRef.current.lastTs = ts;
+
+      const elapsed = ts - start;
+      const t = Math.max(0, Math.min(1, elapsed / duration));
+      const eased = easeInOutQuad(t);
+      const value = from + (to - from) * eased;
+      el.scrollLeft = value;
+
+      if (t < 1) {
+        scrollAnimRef.current = requestAnimationFrame(step);
+      } else {
+        cancelScrollAnimation();
+      }
+    };
+
+    scrollAnimRef.current = requestAnimationFrame(step);
   };
 
   const loadItems = useCallback(async () => {
