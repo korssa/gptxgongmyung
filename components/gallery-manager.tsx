@@ -165,7 +165,7 @@ export function GalleryManager({
             </div>
           )
         ) : (
-          items.map((item) => (
+          items.map((item, index) => (
             <Card
               key={item.id}
               className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 w-[170px] flex-shrink-0"
@@ -176,6 +176,14 @@ export function GalleryManager({
                 {/* Screenshot/App Preview */}
                 <div className="w-full mx-auto">
                   <div className="aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
+                    {/* Numbering overlay for events */}
+                    {type === "events" && (
+                      <div className="absolute top-2 left-2 z-10">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-amber-500/95 text-white flex items-center justify-center font-extrabold text-2xl sm:text-3xl shadow-lg border-2 border-white">
+                          {index + 1}
+                        </div>
+                      </div>
+                    )}
                     {item.screenshotUrls && item.screenshotUrls.length > 0 ? (
                       <Image
                         src={item.screenshotUrls[0]}
