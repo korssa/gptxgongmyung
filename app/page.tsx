@@ -899,7 +899,7 @@ function HomeContent() {
                             }}
                           />
                          <div className="flex-1 min-w-0">
-                           <h3 className="font-bold text-xl mb-1 truncate notranslate text-orange-500" translate="no">{latestApp.name}</h3>
+                          <h3 className="font-bold text-xl mb-1 truncate notranslate text-amber-400" translate="no">{latestApp.name}</h3>
                            <p className="text-base text-muted-foreground truncate notranslate" translate="no">{latestApp.developer}</p>
                          </div>
                        </div>
