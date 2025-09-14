@@ -834,8 +834,8 @@ function HomeContent() {
                    {/* 메인 카드 - 기존 갤러리 카드와 완전히 동일한 반응형 사이즈 */}
                    <div className="relative group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 new-release-card w-full" style={{ backgroundColor: '#D1E2EA' }} onMouseEnter={blockTranslationFeedback} onClick={(e) => e.stopPropagation()}>
                      <div className="relative">
-                       {/* 모바일: 170px 정사각형, sm+: 풀폭 9:16 */}
-                       <div className="w-[170px] aspect-square sm:w-full sm:aspect-[9/16] mx-auto overflow-hidden relative bg-gradient-to-br from-blue-50 to-purple-50">
+                       {/* 모바일: 정확히 170x170, sm+: 풀폭 9:16 */}
+                       <div className="mx-auto w-[170px] h-[170px] sm:w-full sm:h-auto sm:aspect-[9/16] relative overflow-hidden rounded-xl bg-gradient-to-br from-blue-50 to-purple-50">
                          {latestApp.screenshotUrls && latestApp.screenshotUrls.length > 0 ? (
                            <Image
                              src={latestApp.screenshotUrls[0]}
