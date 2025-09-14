@@ -41,9 +41,9 @@ export function NewsList({ type, onBack }: NewsListProps) {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingContent, setEditingContent] = useState<ContentItem | null>(null);
-  // Pagination state (6 items per page)
+  // Pagination state (3 items per page)
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 3;
   const [formData, setFormData] = useState<ContentFormData>({
     title: "",
     content: "",
