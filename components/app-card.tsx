@@ -191,7 +191,7 @@ export function AppCard({ app, viewMode, onDelete, onEdit, onToggleFeatured, onT
                   </div>
                   <span>{app.downloads}</span>
                   <span>{app.version}</span>
-                  <span>{app.uploadDate}</span>
+                  <span>{app.uploadDate?.includes('T') ? app.uploadDate.split('T')[0] : app.uploadDate}</span>
                 </div>
 
                 {app.tags && (
