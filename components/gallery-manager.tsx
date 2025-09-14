@@ -1,4 +1,4 @@
-"use client";
+""use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -54,10 +54,12 @@ export function GalleryManager({
 
   const loadItems = useCallback(async () => {
     try {
-      const response = await fetch(`/api/gallery?type=${type}`);
+      // 'normal' 뷰는 실제로 gallery-gallery 폴더에서 관리되므로 API는 gallery로 조회
+      const queryType = type === "normal" ? "gallery" : type;
+      const response = await fetch(`/api/gallery?type=${queryType}`);
       if (response.ok) {
         const data = await response.json();
-        if (type === "gallery" || type === "normal") {
+        if (queryType === "gallery") {
           setItems(
             data.filter(
               (item: AppItem) =>
