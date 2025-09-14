@@ -181,40 +181,39 @@ export function AdminUploadPublishDialog({ onUpload, onUploadAction, buttonProps
       return;
     }
 
-    try {
-      // FormData 생성
-      const formDataToSend = new FormData();
-      formDataToSend.append("title", formData.name);
-      formDataToSend.append("content", formData.description);
-      formDataToSend.append("author", formData.developer);
-      formDataToSend.append("tags", formData.tags || "");
-      formDataToSend.append("isPublished", "false"); // 리뷰 상태이므로 false
-      formDataToSend.append("file", iconFile);
-      formDataToSend.append("store", formData.store || "google-play");
-      formDataToSend.append("storeUrl", formData.storeUrl || "");
-      formDataToSend.append("appCategory", formData.appCategory || "normal");
-
-      // /api/gallery API 호출 (type=normal로 All Apps에 저장)
-      const response = await fetch(`/api/gallery?type=normal`, {
-        method: "POST",
-        body: formDataToSend,
+    const cb = onUploadAction || onUpload;
+    if (cb) {
+      // 콜백이 제공되면 단일 저장 경로(onUpload → /api/apps/type)만 사용
+      cb(formData, {
+        icon: iconFile,
+        screenshots: screenshotFiles,
       });
+    } else {
+      // 콜백이 없을 때에만 /api/gallery 경로 사용 (레거시/단독 동작 보장)
+      try {
+        const formDataToSend = new FormData();
+        formDataToSend.append("title", formData.name);
+        formDataToSend.append("content", formData.description);
+        formDataToSend.append("author", formData.developer);
+        formDataToSend.append("tags", formData.tags || "");
+        formDataToSend.append("isPublished", "false");
+        formDataToSend.append("file", iconFile);
+        formDataToSend.append("store", formData.store || "google-play");
+        formDataToSend.append("storeUrl", formData.storeUrl || "");
+        formDataToSend.append("appCategory", formData.appCategory || "normal");
 
-      if (response.ok) {
-        console.log("✅ 갤러리에 업로드 성공");
-        const cb = onUploadAction || onUpload;
-        if (cb) {
-          cb(formData, {
-            icon: iconFile,
-            screenshots: screenshotFiles,
-          });
+        const response = await fetch(`/api/gallery?type=normal`, {
+          method: "POST",
+          body: formDataToSend,
+        });
+
+        if (!response.ok) {
+          console.warn("❌ 갤러리 업로드 실패");
+          alert("업로드에 실패했습니다.");
         }
-      } else {
-        console.warn("❌ 갤러리 업로드 실패");
-        alert("업로드에 실패했습니다.");
+      } catch {
+        alert("업로드 중 오류가 발생했습니다.");
       }
-    } catch {
-      alert("업로드 중 오류가 발생했습니다.");
     }
 
     // Reset form
@@ -612,7 +611,7 @@ export function AdminUploadPublishDialog({ onUpload, onUploadAction, buttonProps
                if (typeof window !== 'undefined' && window.adminModeChange) {
                  try {
                    window.adminModeChange(false);
-                 } catch (error) {
+                 } catch {
                    // adminModeChange 호출 실패
                  }
                }
