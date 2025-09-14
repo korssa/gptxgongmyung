@@ -174,35 +174,37 @@ export function GalleryManager({
             >
               <div className="relative">
                 {/* Screenshot/App Preview */}
-                <div className="aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
-                  {item.screenshotUrls && item.screenshotUrls.length > 0 ? (
-                    <Image
-                      src={item.screenshotUrls[0]}
-                      alt={item.name}
-                      fill
-                      unoptimized
-                      className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 w-full h-full flex items-center justify-center text-6xl">
-                      📱
-                    </div>
-                  )}
-                </div>
+                <div className="w-1/2 sm:w-full mx-auto">
+                  <div className="aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
+                    {item.screenshotUrls && item.screenshotUrls.length > 0 ? (
+                      <Image
+                        src={item.screenshotUrls[0]}
+                        alt={item.name}
+                        fill
+                        unoptimized
+                        className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 w-full h-full flex items-center justify-center text-6xl">
+                        📱
+                      </div>
+                    )}
 
-                {/* Status Badge */}
-                <div className="absolute bottom-1 left-1">
-                  <Badge
-                    className={`text-white text-[10px] px-1 py-0.5 ${
-                      item.status === "published"
-                        ? "bg-green-500"
-                        : item.status === "in-review"
-                        ? "bg-orange-500"
-                        : "bg-gray-500"
-                    }`}
-                  >
-                    {item.status}
-                  </Badge>
+                    {/* Status Badge (overlay on screenshot) */}
+                    <div className="absolute bottom-1 left-1">
+                      <Badge
+                        className={`text-white text-[10px] px-1 py-0.5 ${
+                          item.status === "published"
+                            ? "bg-green-500"
+                            : item.status === "in-review"
+                            ? "bg-orange-500"
+                            : "bg-gray-500"
+                        }`}
+                      >
+                        {item.status}
+                      </Badge>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Admin 버튼 */}
@@ -376,3 +378,4 @@ export function GalleryManager({
   );
 }
 export default GalleryManager;
+
