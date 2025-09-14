@@ -833,9 +833,9 @@ function HomeContent() {
                    
                    {/* 메인 카드 - 기존 갤러리 카드와 완전히 동일한 반응형 사이즈 */}
                    <div className="relative group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 new-release-card w-full" style={{ backgroundColor: '#D1E2EA' }} onMouseEnter={blockTranslationFeedback} onClick={(e) => e.stopPropagation()}>
-                     <div className="relative">
-                       {/* 모든 뷰포트: 정확히 300x300 + 내부 패딩 */}
-                       <div className="mx-auto w-[300px] h-[300px] rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 p-2">
+                     <div className="relative pt-3">
+                       {/* 모든 뷰포트: 정확히 330x330 + 내부 패딩 */}
+                       <div className="mx-auto w-[310px] h-[310px] rounded-xl bg-gradient-to-br from-blue-50 to-purple-50 p-2">
                          <div className="relative w-full h-full overflow-hidden rounded-lg">
                            {latestApp.screenshotUrls && latestApp.screenshotUrls.length > 0 ? (
                              <Image
@@ -875,7 +875,7 @@ function HomeContent() {
                             }}
                           />
                          <div className="flex-1 min-w-0">
-                           <h3 className="font-bold text-xl mb-1 truncate notranslate text-[#D4AF37]" translate="no">{latestApp.name}</h3>
+                           <h3 className="font-bold text-xl mb-1 truncate notranslate text-orange-500" translate="no">{latestApp.name}</h3>
                            <p className="text-base text-muted-foreground truncate notranslate" translate="no">{latestApp.developer}</p>
                          </div>
                        </div>
