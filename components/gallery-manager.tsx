@@ -170,7 +170,13 @@ export function GalleryManager({
           items.map((item, index) => (
             <Card
               key={item.id}
-              className={`group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 w-[170px] flex-shrink-0 ${type === "featured" ? "relative featured-glow-card" : ""}`}
+              className={`group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 w-[170px] flex-shrink-0 ${
+                type === "featured"
+                  ? "relative featured-glow-card"
+                  : type === "events"
+                  ? ""
+                  : "relative allapps-glow-card"
+              }`}
               style={{ backgroundColor: "#D1E2EA" }}
               onMouseEnter={blockTranslationFeedback}
             >
