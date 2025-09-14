@@ -149,7 +149,7 @@ export function GalleryManager({
           items.map((item) => (
             <Card
               key={item.id}
-              className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 w-[340px] flex-shrink-0"
+              className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 w-[170px] flex-shrink-0"
               style={{ backgroundColor: "#D1E2EA" }}
               onMouseEnter={blockTranslationFeedback}
             >
@@ -172,9 +172,9 @@ export function GalleryManager({
                 </div>
 
                 {/* Status Badge */}
-                <div className="absolute bottom-2 left-2">
+                <div className="absolute bottom-1 left-1">
                   <Badge
-                    className={`text-white text-xs ${
+                    className={`text-white text-[10px] px-1 py-0.5 ${
                       item.status === "published"
                         ? "bg-green-500"
                         : item.status === "in-review"
@@ -192,35 +192,35 @@ export function GalleryManager({
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-blue-600 hover:bg-blue-700 border-blue-600 text-white"
+                      className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-blue-600 hover:bg-blue-700 border-blue-600 text-white"
                       onClick={() => console.log("Edit:", item.id)}
                       onMouseEnter={blockTranslationFeedback}
                     >
-                      <Edit className="h-3 w-3" />
+                      <Edit className="h-2.5 w-2.5" />
                     </Button>
                     <Button
                       size="sm"
                       variant="destructive"
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                       onClick={() => handleDelete(item.id)}
                       onMouseEnter={blockTranslationFeedback}
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-2.5 w-2.5" />
                     </Button>
                   </div>
                 )}
               </div>
 
-              <CardContent className="px-2 py-0" style={{ backgroundColor: "#D1E2EA" }}>
+              <CardContent className="px-1.5 py-0" style={{ backgroundColor: "#D1E2EA" }}>
                 {/* App Icon and Basic Info */}
-                <div className="flex items-start space-x-3 mb-2">
+                <div className="flex items-start space-x-2 mb-1.5">
                   <Image
                     src={item.iconUrl}
                     alt={item.name}
-                    width={48}
-                    height={48}
+                    width={24}
+                    height={24}
                     unoptimized
-                    className="w-12 h-12 rounded-xl object-cover object-center flex-shrink-0"
+                    className="w-6 h-6 rounded-lg object-cover object-center flex-shrink-0"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src =
@@ -228,20 +228,20 @@ export function GalleryManager({
                     }}
                   />
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-base mb-1 truncate notranslate" translate="no">
+                    <h3 className="font-semibold text-xs mb-0.5 truncate notranslate" translate="no">
                       {item.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground truncate notranslate" translate="no">
+                    <p className="text-[10px] text-muted-foreground truncate notranslate" translate="no">
                       {item.developer}
                     </p>
                   </div>
                 </div>
 
                 {/* Rating and Stats */}
-                <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                  <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
+                  <div className="flex items-center space-x-2">
                     <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                       <span>{item.rating}</span>
                     </div>
                     <span>{item.downloads}</span>
@@ -253,39 +253,39 @@ export function GalleryManager({
                 {item.tags && item.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-0">
                     {item.tags.slice(0, 2).map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs px-2 py-0">
+                      <Badge key={index} variant="secondary" className="text-[10px] px-1.5 py-0">
                         {tag}
                       </Badge>
                     ))}
                     {item.tags.length > 2 && (
-                      <span className="text-xs text-muted-foreground">+{item.tags.length - 2}</span>
+                      <span className="text-[10px] text-muted-foreground">+{item.tags.length - 2}</span>
                     )}
                   </div>
                 )}
               </CardContent>
 
               {/* Download Section */}
-              <CardFooter className="w-full bg-[#84CC9A] border-t border-gray-300 px-4 py-2">
+              <CardFooter className="w-full bg-[#84CC9A] border-t border-gray-300 px-2 py-1.5">
                 <div className="flex flex-col items-start space-y-1 w-full">
                   {/* Download Button */}
                   <div className="w-full">
                     {item.status === "published" ? (
                       <Button
                         size="sm"
-                        className="h-6 px-3 text-xs bg-green-700 hover:bg-green-800 text-white flex items-center gap-1 whitespace-nowrap min-w-[120px] justify-start"
+                        className="h-5 px-2 text-[10px] bg-green-700 hover:bg-green-800 text-white flex items-center gap-1 whitespace-nowrap min-w-[100px] justify-start"
                         onClick={() => {
                           if (item.storeUrl) {
                             window.open(item.storeUrl, "_blank");
                           }
                         }}
                       >
-                        <Download className="h-3 w-3" />
+                        <Download className="h-2.5 w-2.5" />
                         Download
                       </Button>
                     ) : (
                       <Button
                         size="sm"
-                        className="h-6 px-3 text-xs bg-gray-500 text-white flex items-center gap-1 min-w-[120px] justify-start"
+                        className="h-5 px-2 text-[10px] bg-gray-500 text-white flex items-center gap-1 min-w-[100px] justify-start"
                         disabled
                       >
                         Coming soon
@@ -294,13 +294,13 @@ export function GalleryManager({
                   </div>
 
                   {/* Store Badge */}
-                  <div className="h-6">
+                  <div className="h-4">
                     <Image
                       src={item.store === "google-play" ? "/google-play-badge.png" : "/app-store-badge.png"}
                       alt="스토어 배지"
-                      width={100}
-                      height={24}
-                      className="h-6 object-contain"
+                      width={80}
+                      height={16}
+                      className="h-4 object-contain"
                     />
                   </div>
                 </div>
