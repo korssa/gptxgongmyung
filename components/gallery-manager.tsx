@@ -62,9 +62,10 @@ export function GalleryManager({
     if (isMobile) {
       const firstItem = el.firstElementChild as HTMLElement | null;
       const itemWidth = firstItem?.offsetWidth ?? 170; // fallback to our card width
-      const styles = getComputedStyle(el);
-      const gapStr = (styles.columnGap || (styles as any).gap || "0").toString();
-      const gap = parseFloat(gapStr);
+     const styles = getComputedStyle(el) as CSSStyleDeclaration;
+const gapStr = (styles.columnGap || styles.gap || "0").toString();
+const gap = parseFloat(gapStr);
+
       amount = itemWidth + (Number.isFinite(gap) ? gap : 0);
     } else {
       amount = Math.max(320, Math.floor(el.clientWidth * 0.9));
