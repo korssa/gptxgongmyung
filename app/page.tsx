@@ -843,7 +843,7 @@ function HomeContent() {
                                alt={latestApp.name}
                                fill
                                unoptimized={isBlobUrl(latestApp.screenshotUrls[0])}
-                               className="object-cover object-center"
+                               className="object-contain object-center"
                              />
                            ) : (
                              <div className="absolute inset-0 w-full h-full flex items-center justify-center text-6xl">
