@@ -1,4 +1,4 @@
-"use client";
+"u"use client";
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -195,32 +195,9 @@ export function AdminUploadDialog({
         alert("업로드 중 오류가 발생했습니다.");
       }
     } else if (onUpload) {
-      // targetGallery가 없으면 /api/gallery API를 직접 호출 (type=normal로 All Apps에 저장)
-      try {
-        const formDataToSend = new FormData();
-        formDataToSend.append("file", iconFile);
-        formDataToSend.append("title", formData.name);
-        formDataToSend.append("content", formData.description || "");
-        formDataToSend.append("author", formData.developer);
-        formDataToSend.append("tags", formData.tags || "");
-        formDataToSend.append("isPublished", "true");
-        formDataToSend.append("store", formData.store || "google-play");
-        formDataToSend.append("storeUrl", formData.storeUrl || "");
-        formDataToSend.append("appCategory", formData.appCategory || "normal");
-
-        const response = await fetch(`/api/gallery?type=normal`, {
-          method: "POST",
-          body: formDataToSend,
-        });
-
-        if (response.ok) {
-          onUpload(formData, { icon: iconFile, screenshots: screenshotFiles });
-        } else {
-          alert("업로드에 실패했습니다.");
-        }
-      } catch (error) {
-        alert("업로드 중 오류가 발생했습니다.");
-      }
+      // targetGallery가 없고 onUpload가 제공되면, 단일 경로로 저장: 상위 onUpload 콜백에 위임
+      // 이 경로는 /api/apps/type 저장 플로우를 사용하므로, /api/gallery로 중복 전송하지 않습니다.
+      onUpload(formData, { icon: iconFile, screenshots: screenshotFiles });
     }
 
     setIsOpen(false);
