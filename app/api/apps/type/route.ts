@@ -43,7 +43,7 @@ async function loadApps(): Promise<AppItem[]> {
       if (apps && apps.length > 0) {
         return apps;
       }
-    } catch (error) {
+  } catch {
     }
 
     // 2) Vercel 환경에서는 개별 JSON 파일들 읽기 (Featured/Events 방식)
@@ -92,7 +92,7 @@ async function loadApps(): Promise<AppItem[]> {
         if (memoryStorage.length > 0) {
           return memoryStorage;
         }
-      } catch (blobError) {
+      } catch {
         // Blob 에러시 메모리 사용
         if (memoryStorage.length > 0) {
           return memoryStorage;
@@ -125,7 +125,7 @@ function separateAppsByType(apps: AppItem[]) {
   Object.entries(separated).forEach(([type, typeApps]) => {
     const range = TYPE_RANGES[type as keyof typeof TYPE_RANGES];
     
-    const beforeFilter = typeApps.length;
+  // const beforeFilter = typeApps.length;
     separated[type] = typeApps.filter(app => {
       // ID가 숫자인 경우 범위 검증
       if (/^\d+$/.test(app.id)) {
@@ -143,7 +143,7 @@ function separateAppsByType(apps: AppItem[]) {
       return true;
     });
     
-    const afterFilter = separated[type].length;
+  // const afterFilter = separated[type].length;
   });
 
   return separated;
@@ -165,8 +165,26 @@ export async function GET(request: NextRequest) {
     // 요청된 타입의 앱만 반환
     const typeApps = separated[type] || [];
     
-    // 최신순 정렬
-    typeApps.sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
+    // 최신순 정렬: 업로드일시 우선, 동률/무효 시 id의 타임스탬프로 보조 정렬
+    const extractIdTime = (id: string) => {
+      const m = id.match(/^(\d+)_/);
+      if (m && m[1]) {
+        const n = parseInt(m[1], 10);
+        return Number.isFinite(n) ? n : 0;
+      }
+      if (/^\d+$/.test(id)) {
+        const n = parseInt(id, 10);
+        return Number.isFinite(n) ? n : 0;
+      }
+      return 0;
+    };
+    typeApps.sort((a, b) => {
+      const at = new Date(a.uploadDate).getTime();
+      const bt = new Date(b.uploadDate).getTime();
+      const diff = bt - at;
+      if (diff !== 0 && !Number.isNaN(diff)) return diff;
+      return extractIdTime(b.id) - extractIdTime(a.id);
+    });
 
     return NextResponse.json({
       type,
@@ -233,7 +251,7 @@ export async function POST(request: NextRequest) {
         });
         
         savedApps.push(app);
-(`✅ 갤러리 앱 저장 성공: ${app.id} -> ${folderPath}/${jsonFilename}`);
+            console.log(`✅ 갤러리 앱 저장 성공: ${app.id} -> ${folderPath}/${jsonFilename}`);
       } catch (error) {
         console.error(`❌ 갤러리 앱 저장 실패: ${app.id}`, error);
       }
@@ -245,7 +263,7 @@ export async function POST(request: NextRequest) {
         // 저장된 개별 파일들 확인
         const { blobs } = await list({ prefix: `${folderPath}/`, limit: 100 });
         const jsonFiles = blobs.filter(blob => blob.pathname.endsWith('.json'));
-(`📁 ${folderPath} 폴더에 ${jsonFiles.length}개 JSON 파일 저장됨`);
+            console.log(`📁 ${folderPath} 폴더에 ${jsonFiles.length}개 JSON 파일 저장됨`);
       } catch (blobError) {
         console.error('Blob 동기화 확인 실패:', blobError);
       }
@@ -317,7 +335,7 @@ export async function PUT(request: NextRequest) {
 
       if (existingFile) {
         await del(existingFile.url);
-(`🗑️ 기존 JSON 파일 삭제: ${app.id}`);
+        console.log(`🗑️ 기존 JSON 파일 삭제: ${app.id}`);
       }
 
       // 새 JSON 파일 생성
@@ -327,7 +345,7 @@ export async function PUT(request: NextRequest) {
         addRandomSuffix: false,
       });
       
-(`✅ 갤러리 앱 업데이트 성공: ${app.id} -> ${folderPath}/${jsonFilename}`);
+      console.log(`✅ 갤러리 앱 업데이트 성공: ${app.id} -> ${folderPath}/${jsonFilename}`);
       
       return NextResponse.json({
         success: true,
