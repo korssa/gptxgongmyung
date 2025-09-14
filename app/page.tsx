@@ -64,6 +64,31 @@ function HomeContent() {
   const [latestApp, setLatestApp] = useState<AppItem | null>(null);
   const searchParams = useSearchParams();
 
+  // 업로드일시 우선 정렬 + 동률 시 id 내 타임스탬프(생성 시각)로 보조 정렬
+  const compareByUploadDateThenId = (a: AppItem, b: AppItem) => {
+    const at = new Date(a.uploadDate).getTime();
+    const bt = new Date(b.uploadDate).getTime();
+    const diff = bt - at;
+    if (diff !== 0 && !Number.isNaN(diff)) return diff;
+
+    const extractIdTime = (id: string) => {
+      // generateUniqueId() => `${Date.now()}_${random}` 형태 우선 사용
+      const m = id.match(/^(\d+)_/);
+      if (m && m[1]) {
+        const n = parseInt(m[1], 10);
+        return Number.isFinite(n) ? n : 0;
+      }
+      // 숫자 전체 id 인 경우 숫자값 사용
+      if (/^\d+$/.test(id)) {
+        const n = parseInt(id, 10);
+        return Number.isFinite(n) ? n : 0;
+      }
+      return 0;
+    };
+
+    return extractIdTime(b.id) - extractIdTime(a.id);
+  };
+
   // URL 쿼리 파라미터 처리 - 홈 버튼 클릭 시 도메인으로 이동
   useEffect(() => {
     const filter = searchParams.get('filter');
@@ -102,7 +127,7 @@ function HomeContent() {
       try {
         const publishedApps = allApps
           .filter(app => app.status === "published")
-          .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
+          .sort(compareByUploadDateThenId);
         setLatestApp(publishedApps[0] || null);
       } catch (error) {
         console.error('최신 앱 조회 실패:', error);
@@ -136,9 +161,7 @@ function HomeContent() {
       case "latest":
         const latestApps = filtered
           .filter(app => app.status === "published")
-          .sort((a, b) => 
-            new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
-          );
+          .sort(compareByUploadDateThenId);
         return latestApps.slice(0, 1); // 가장 최근 published 앱 1개만 반환
       case "featured": {
         return allApps.filter(app => featuredIds.includes(app.id)).sort((a, b) => a.name.localeCompare(b.name));
@@ -301,7 +324,8 @@ function HomeContent() {
         downloads: data.downloads,
         views: 0,
         likes: 0,
-        uploadDate: new Date().toISOString().split('T')[0],
+  // 날짜만 저장하면 동일 날짜 업로드 시 최신 정렬이 불안정해져 전체 ISO로 저장
+  uploadDate: new Date().toISOString(),
         tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
         storeUrl: data.storeUrl || undefined,
         version: data.version,
