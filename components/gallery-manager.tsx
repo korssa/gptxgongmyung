@@ -174,7 +174,7 @@ export function GalleryManager({
             >
               <div className="relative">
                 {/* Screenshot/App Preview */}
-                <div className={`${type === "normal" ? "w-2/3 sm:w-full" : "w-full"} mx-auto`}>
+                <div className={`${type === "normal" ? "sm:w-full" : "w-full"} mx-auto`}>
                   <div className="aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
                     {item.screenshotUrls && item.screenshotUrls.length > 0 ? (
                       <Image
