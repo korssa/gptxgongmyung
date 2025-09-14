@@ -1,390 +1,476 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Trash2, Edit, Star, Download } from "lucide-react";
-import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
-import { AdminFeaturedUploadDialog } from "./admin-featured-upload-dialog";
-import { AdminEventsUploadDialog } from "./admin-events-upload-dialog";
-import { AppItem } from "@/types";
-import Image from "next/image";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Upload, Image as ImageIcon, X, Lock } from "lucide-react";
+import { AppFormData, AppStore, AppStatus } from "@/types";
 
-interface GalleryManagerProps {
-  type: "gallery" | "featured" | "events" | "normal";
-  title: string;
-  description: string;
-  onBack?: () => void;
-  isAdmin?: boolean;
+import { useAdmin } from "@/hooks/use-admin";
+import { createURLManager, registerManager, unregisterManager } from "@/lib/url-manager";
+import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
+
+const adminTexts = {
+  upload: "Upload",
+  uploadTitle: "Upload App",
+  uploadDescription: "Add a new app to the gallery.",
+  appName: "App Name",
+  appNamePlaceholder: "Enter app name",
+  developer: "Developer",
+  developerPlaceholder: "Enter developer name",
+  description: "Description",
+  descriptionPlaceholder: "Enter app description",
+  category: "Category",
+  tags: "Tags (Optional)",
+  tagsPlaceholder: "Enter tags separated by commas",
+  tagsExample: "e.g., productivity, utility, game",
+  selectFiles: "Click to upload or drag and drop",
+  fileTypes: "PNG, JPG, JPEG (Max 10MB)",
+  selectedFiles: "Selected files:",
+  cancel: "Cancel",
+  logout: "Logout",
+  store: "Store",
+  status: "Status",
+  googlePlay: "Google Play Store",
+  appStore: "App Store",
+  published: "Published",
+  inReview: "In Review",
+  adminPassword: "Admin Password",
+  passwordPlaceholder: "Enter admin password",
+  login: "Login",
+  adminPanel: "Admin Panel",
+};
+
+interface AdminUploadDialogProps {
+  onUpload?: (data: AppFormData, files: { icon: File; screenshots: File[] }) => void;
+  buttonProps?: {
+    size?: "sm" | "lg" | "default";
+    className?: string;
+  };
+  buttonText?: string;
+  isOpen?: boolean;
+  onClose?: () => void;
+  onUploadSuccess?: () => void;
+  targetGallery?: "gallery" | "featured" | "events" | "normal";
 }
 
-export function GalleryManager({
-  type,
-  title,
-  description,
-  onBack,
-  isAdmin = false,
-}: GalleryManagerProps) {
-  const [items, setItems] = useState<AppItem[]>([]);
-  // Horizontal scroller: no pagination
-  // Admin upload dialog states (featured/events 전용)
-  const [isFeaturedDialogOpen, setFeaturedDialogOpen] = useState(false);
-  const [isEventsDialogOpen, setEventsDialogOpen] = useState(false);
-  const scrollerRef = useRef<HTMLDivElement | null>(null);
-
-  // Scroll helper: mobile (<640px) -> one card per click; otherwise ~viewport width
-  const scrollByStep = (dir: -1 | 1) => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 640;
-    let amount = 0;
-    if (isMobile) {
-      const firstItem = el.firstElementChild as HTMLElement | null;
-      const itemWidth = firstItem?.offsetWidth ?? 170; // fallback to our card width
-      const styles = getComputedStyle(el);
-      const gapStr = (styles.columnGap || styles.gap || "0").toString();
-      const gap = parseFloat(gapStr);
-      amount = itemWidth + (Number.isFinite(gap) ? gap : 0);
-    } else {
-      amount = Math.max(320, Math.floor(el.clientWidth * 0.9));
-    }
-    el.scrollBy({ left: dir * amount, behavior: "smooth" });
-  };
-
-  const loadItems = useCallback(async () => {
-    try {
-      // 'normal' 뷰는 실제로 gallery-gallery 폴더에서 관리되므로 API는 gallery로 조회
-      const queryType = type === "normal" ? "gallery" : type;
-      const response = await fetch(`/api/gallery?type=${queryType}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (queryType === "gallery") {
-          setItems(
-            data.filter(
-              (item: AppItem) =>
-                item.status === "published" ||
-                item.status === "in-review" ||
-                item.status === "development"
-            )
-          );
-        } else {
-          setItems(data.filter((item: AppItem) => item.status === "published"));
-        }
-      }
-    } catch {
-      // noop
-    }
-  }, [type]);
+export function AdminUploadDialog({
+  onUpload,
+  buttonProps,
+  buttonText = "Upload",
+  isOpen: externalIsOpen,
+  onClose,
+  onUploadSuccess,
+  targetGallery,
+}: AdminUploadDialogProps) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = externalIsOpen !== undefined ? onClose || (() => {}) : setInternalIsOpen;
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [screenshotFiles, setScreenshotFiles] = useState<File[]>([]);
+  const [iconUrl, setIconUrl] = useState<string | null>(null);
+  const [screenshotUrls, setScreenshotUrls] = useState<string[]>([]);
+  const [urlManager] = useState(() => createURLManager());
 
   useEffect(() => {
-    loadItems();
-  }, [type, loadItems]);
+    registerManager(urlManager);
+    return () => {
+      unregisterManager(urlManager);
+      urlManager.dispose();
+    };
+  }, [urlManager]);
 
-  // delete handler for admin actions
-  const handleDelete = (itemId: string) => {
-    createAdminButtonHandler(async () => {
-      const item = items.find((i) => i.id === itemId);
-      if (confirm(`"${item?.name}"을(를) 삭제하시겠습니까?`)) {
+  const [formData, setFormData] = useState<AppFormData>({
+    name: "",
+    developer: "",
+    description: "",
+    store: "google-play",
+    status: "published", // ✅ 기본값
+    tags: "",
+    rating: 4.5,
+    downloads: "1K+",
+    version: "1.0.0",
+    size: "50MB",
+    category: "",
+    storeUrl: "",
+    appCategory: "normal", // ✅ 항상 normal
+  });
+
+  const { isAuthenticated, login, logout } = useAdmin();
+
+  useEffect(() => {
+    if (!iconFile || urlManager.isDisposed()) {
+      setIconUrl(null);
+      return;
+    }
+    const url = urlManager.createObjectURL(iconFile);
+    setIconUrl(url);
+    return () => {
+      if (url) urlManager.revokeObjectURL(url);
+    };
+  }, [iconFile, urlManager]);
+
+  useEffect(() => {
+    if (screenshotFiles.length === 0 || urlManager.isDisposed()) {
+      setScreenshotUrls([]);
+      return;
+    }
+    const urls = screenshotFiles
+      .map((file) => urlManager.createObjectURL(file))
+      .filter((url) => url !== null) as string[];
+    setScreenshotUrls(urls);
+    return () => {
+      urls.forEach((url) => {
+        if (url) urlManager.revokeObjectURL(url);
+      });
+    };
+  }, [screenshotFiles, urlManager]);
+
+  const handleLogin = () => {
+    if (login(password)) {
+      setIsLoginOpen(false);
+      setPassword("");
+      setIsOpen(true);
+      if (typeof window !== "undefined" && window.adminModeChange) {
         try {
-          const response = await fetch(`/api/gallery?type=${type}&id=${itemId}`, {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-          });
-          if (response.ok) {
-            setItems((prev) => prev.filter((i) => i.id !== itemId));
-          } else {
-            alert("삭제에 실패했습니다.");
-          }
-        } catch {
-          alert("삭제 중 오류가 발생했습니다.");
-        }
+          window.adminModeChange(true);
+        } catch {}
       }
-    })();
+    } else {
+      alert("Incorrect password");
+    }
   };
 
-  // pagination removed; render all items in a horizontal scroller
+  const handleIconSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) setIconFile(file);
+  };
+
+  const handleScreenshotsSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    setScreenshotFiles(files);
+  };
+
+  const removeScreenshot = (index: number) => {
+    setScreenshotFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async () => {
+    if (!iconFile) {
+      alert("Please select an app icon");
+      return;
+    }
+
+    if (targetGallery && onUploadSuccess) {
+      try {
+        const formDataToSend = new FormData();
+        formDataToSend.append("file", iconFile);
+        formDataToSend.append("title", formData.name);
+        formDataToSend.append("content", formData.description || "");
+        formDataToSend.append("author", formData.developer);
+        formDataToSend.append("tags", formData.tags || "");
+        formDataToSend.append("isPublished", "true");
+        formDataToSend.append("store", formData.store || "google-play");
+        formDataToSend.append("storeUrl", formData.storeUrl || "");
+        formDataToSend.append("appCategory", formData.appCategory || "normal");
+
+        const response = await fetch(`/api/gallery?type=${targetGallery}`, {
+          method: "POST",
+          body: formDataToSend,
+        });
+
+        if (response.ok) {
+          onUploadSuccess();
+        } else {
+          alert("업로드에 실패했습니다.");
+        }
+      } catch {
+        alert("업로드 중 오류가 발생했습니다.");
+      }
+    } else if (onUpload) {
+      // targetGallery가 없고 onUpload가 제공되면, 단일 경로로 저장: 상위 onUpload 콜백에 위임
+      // 이 경로는 /api/apps/type 저장 플로우를 사용하므로, /api/gallery로 중복 전송하지 않습니다.
+      onUpload(formData, { icon: iconFile, screenshots: screenshotFiles });
+    }
+
+    setIsOpen(false);
+    setIconFile(null);
+    setScreenshotFiles([]);
+    setFormData({
+      name: "",
+      developer: "",
+      description: "",
+      store: "google-play",
+      status: "published", // ✅ reset 값
+      tags: "",
+      rating: 4.5,
+      downloads: "1K+",
+      version: "1.0.0",
+      size: "50MB",
+      category: "",
+      storeUrl: "",
+      appCategory: "normal", // ✅ 고정
+    });
+  };
+
+  const isFormValid = formData.name.trim() && formData.developer.trim() && iconFile;
+
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2" onMouseEnter={blockTranslationFeedback}>
+              <Lock className="h-4 w-4" />
+              {adminTexts.adminPanel}
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[400px]" onMouseEnter={blockTranslationFeedback}>
+            <DialogHeader>
+              <DialogTitle>{adminTexts.adminPanel}</DialogTitle>
+              <DialogDescription>{adminTexts.adminPassword}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4" onMouseEnter={blockTranslationFeedback}>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={adminTexts.passwordPlaceholder}
+                onKeyPress={(e) => e.key === "Enter" && handleLogin()}
+                onMouseEnter={blockTranslationFeedback}
+              />
+            </div>
+            <DialogFooter onMouseEnter={blockTranslationFeedback}>
+              <Button variant="outline" onClick={() => setIsLoginOpen(false)} onMouseEnter={blockTranslationFeedback}>
+                {adminTexts.cancel}
+              </Button>
+              <Button onClick={createAdminButtonHandler(handleLogin)} disabled={!password.trim()} onMouseEnter={blockTranslationFeedback}>
+                {adminTexts.login}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* 제목/설명 (normal이면 숨김) */}
-      {type !== "normal" && (
-        <div className="flex flex-col items-center justify-center space-y-4">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold text-white">{title}</h2>
-            <p className="text-gray-400" onMouseEnter={blockTranslationFeedback}>
-              {description}
-            </p>
-          </div>
-        </div>
-      )}
+    <div className="flex items-center gap-2">
+      <Button
+        size={buttonProps?.size || "default"}
+        className={`${buttonProps?.className || "gap-2"} notranslate`}
+        onClick={() => setIsOpen(true)}
+        onMouseEnter={blockTranslationFeedback}
+        translate="no"
+      >
+        <Upload className="h-4 w-4" />
+        {buttonText || adminTexts.upload}
+      </Button>
 
-      {/* Admin: featured / events 업로드 버튼 (gallery/normal은 숨김) */}
-      {isAdmin && (type === "featured" || type === "events") && (
-        <div className="flex justify-end">
-          {type === "featured" ? (
-            <Button
-              className="bg-blue-600 text-white hover:bg-blue-700"
-              onClick={() => setFeaturedDialogOpen(true)}
-              onMouseEnter={blockTranslationFeedback}
-            >
-              + Add Featured
-            </Button>
-          ) : (
-            <Button
-              className="bg-blue-600 text-white hover:bg-blue-700"
-              onClick={() => setEventsDialogOpen(true)}
-              onMouseEnter={blockTranslationFeedback}
-            >
-              + Add Event
-            </Button>
-          )}
-        </div>
-      )}
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader onMouseEnter={blockTranslationFeedback}>
+            <DialogTitle>{adminTexts.uploadTitle}</DialogTitle>
+            <DialogDescription>{adminTexts.uploadDescription}</DialogDescription>
+          </DialogHeader>
 
-      {onBack && (
-        <Button
-          variant="outline"
-          onClick={onBack}
-          className="bg-[#2e2e2e] text-white hover:bg-[#444] border border-gray-700 hover:border-gray-500 transition"
-          onMouseEnter={blockTranslationFeedback}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          뒤로가기
-        </Button>
-      )}
-
-      {/* 가로 스크롤 카드 행 (전체 필드 포함) */}
-      <div ref={scrollerRef} className="flex flex-row gap-4 overflow-x-auto py-4 px-2">
-        {items.length === 0 ? (
-          type !== "normal" && (
-            <div className="col-span-full">
-              <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-8 text-center text-gray-400">
-                  {"아직 업로드된 갤러리 아이템이 없습니다."}
-                </CardContent>
-              </Card>
+          <div className="space-y-4" onMouseEnter={blockTranslationFeedback}>
+            {/* Basic Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">{adminTexts.appName} *</label>
+                <Input value={formData.name} onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))} placeholder={adminTexts.appNamePlaceholder} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">{adminTexts.developer} *</label>
+                <Input value={formData.developer} onChange={(e) => setFormData((prev) => ({ ...prev, developer: e.target.value }))} placeholder={adminTexts.developerPlaceholder} />
+              </div>
             </div>
-          )
-        ) : (
-          items.map((item, index) => (
-            <Card
-              key={item.id}
-              className="group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 w-[170px] flex-shrink-0"
-              style={{ backgroundColor: "#D1E2EA" }}
-              onMouseEnter={blockTranslationFeedback}
-            >
-              <div className="relative">
-                {/* Screenshot/App Preview */}
-                <div className="w-full mx-auto">
-                  <div className="aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
-                    {/* Numbering overlay for events */}
-                    {type === "events" && (
-                      <div className="absolute top-2 left-2 z-10">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-amber-500/95 text-white flex items-center justify-center font-extrabold text-2xl sm:text-3xl shadow-lg border-2 border-white">
-                          {index + 1}
-                        </div>
-                      </div>
-                    )}
-                    {item.screenshotUrls && item.screenshotUrls.length > 0 ? (
-                      <Image
-                        src={item.screenshotUrls[0]}
-                        alt={item.name}
-                        fill
-                        unoptimized
-                        className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 w-full h-full flex items-center justify-center text-6xl">
-                        📱
-                      </div>
-                    )}
 
-                    {/* Status Badge (overlay on screenshot) */}
-                    <div className="absolute bottom-1 left-1">
-                      <Badge
-                        className={`text-white text-[10px] px-1 py-0.5 ${
-                          item.status === "published"
-                            ? "bg-green-500"
-                            : item.status === "in-review"
-                            ? "bg-orange-500"
-                            : "bg-gray-500"
-                        }`}
-                      >
-                        {item.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium mb-2">{adminTexts.description}</label>
+              <Input value={formData.description} onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))} placeholder={adminTexts.descriptionPlaceholder} />
+            </div>
 
-                {/* Admin 버튼 */}
-                {isAdmin && (
-                  <div className="absolute top-2 right-2 flex gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-blue-600 hover:bg-blue-700 border-blue-600 text-white"
-                      onClick={() => console.log("Edit:", item.id)}
-                      onMouseEnter={blockTranslationFeedback}
-                    >
-                      <Edit className="h-2.5 w-2.5" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                      onClick={() => handleDelete(item.id)}
-                      onMouseEnter={blockTranslationFeedback}
-                    >
-                      <Trash2 className="h-2.5 w-2.5" />
-                    </Button>
-                  </div>
-                )}
+            {/* Store and Status */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Store */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  <span className="notranslate" translate="no">
+                    {adminTexts.store}
+                  </span>
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start h-10 bg-white hover:bg-gray-50 border border-gray-200"
+                  onClick={createAdminButtonHandler(() => {
+                    try {
+                      const stores: AppStore[] = ["google-play", "app-store"];
+                      const currentIndex = stores.indexOf(formData.store);
+                      const nextIndex = (currentIndex + 1) % stores.length;
+                      const newStore = stores[nextIndex];
+                      setFormData((prev) => ({ ...prev, store: newStore }));
+                      blockTranslationFeedback();
+                    } catch {}
+                  })}
+                >
+                  {formData.store === "google-play" ? "🤖 " + adminTexts.googlePlay : "🍎 " + adminTexts.appStore}
+                </Button>
               </div>
 
-              <CardContent className="px-1.5 py-0" style={{ backgroundColor: "#D1E2EA" }}>
-                {/* App Icon and Basic Info */}
-                <div className="flex items-start space-x-2 mb-2">
-                  <Image
-                    src={item.iconUrl}
-                    alt={item.name}
-                    width={64}
-                    height={64}
-                    unoptimized
-                    className="w-16 h-16 rounded-xl object-cover object-center flex-shrink-0"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src =
-                        "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjZjNmNGY2Ii8+CjxwYXRoIGQ9Ik0xMiA2QzEwLjM0IDYgOSA3LjM0IDkgOUM5IDEwLjY2IDEwLjM0IDEyIDEyIDEyQzEzLjY2IDEyIDE1IDEwLjY2IDE1IDlDMTUgNy4zNCAxMy42NiA2IDEyIDZaTTEyIDRDMTQuNzYgNCAxNyA2LjI0IDE3IDlDMTcgMTEuNzYgMTQuNzYgMTQgMTIgMTRDOS4yNCAxNCA3IDExLjc2IDcgOUM3IDYuMjQgOS4yNCA0IDEyIDRaTTEyIDE2QzEwLjM0IDE2IDkgMTcuMzQgOSAxOUg3QzcgMTYuMjQgOS4yNCAxNCAxMiAxNEMxNC43NiAxNCAxNyAxNi4yNCAxNyAxOUgxNUMxNSAxNy4zNCAxMy42NiAxNiAxMiAxNloiIGZpbGw9IiM5Y2EzYWYiLz4KPC9zdmc+";
-                    }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg mb-1 truncate notranslate" translate="no">
-                      {item.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground truncate notranslate" translate="no">
-                      {item.developer}
-                    </p>
-                  </div>
-                </div>
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-medium mb-2">{adminTexts.status}</label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start h-10 bg-white hover:bg-gray-50 border border-gray-200"
+                  onClick={() => {
+                    try {
+                      blockTranslationFeedback();
+                      const statuses: AppStatus[] = ["published", "in-review"];
+                      const currentIndex = statuses.indexOf(formData.status as AppStatus);
+                      const nextIndex = (currentIndex + 1) % statuses.length;
+                      const newStatus = statuses[nextIndex >= 0 ? nextIndex : 0];
+                      setFormData((prev) => ({ ...prev, status: newStatus }));
+                    } catch {}
+                  }}
+                >
+                  {formData.status === "published" && "✅ " + adminTexts.published}
+                  {formData.status === "in-review" && "⏳ " + adminTexts.inReview}
+                </Button>
+              </div>
+            </div>
 
-                {/* Rating and Stats */}
-                <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span>{item.rating}</span>
-                    </div>
-                    <span>{item.downloads}</span>
-                  </div>
-                  <span>{item.version}</span>
-                </div>
+            {/* Additional Info */}
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Rating</label>
+                <Input type="number" min="0" max="5" step="0.1" value={formData.rating} onChange={(e) => setFormData((prev) => ({ ...prev, rating: parseFloat(e.target.value) }))} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Downloads</label>
+                <Input value={formData.downloads} onChange={(e) => setFormData((prev) => ({ ...prev, downloads: e.target.value }))} placeholder="1K+, 10K+, 1M+" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Version</label>
+                <Input value={formData.version} onChange={(e) => setFormData((prev) => ({ ...prev, version: e.target.value }))} placeholder="1.0.0" />
+              </div>
+            </div>
 
-                {/* Tags */}
-                {item.tags && item.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {item.tags.slice(0, 2).map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-sm px-2 py-0.5">
-                        {tag}
-                      </Badge>
-                    ))}
-                    {item.tags.length > 2 && (
-                      <span className="text-sm text-muted-foreground">+{item.tags.length - 2}</span>
-                    )}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Size</label>
+                <Input value={formData.size} onChange={(e) => setFormData((prev) => ({ ...prev, size: e.target.value }))} placeholder="50MB" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Store URL</label>
+                <Input value={formData.storeUrl} onChange={(e) => setFormData((prev) => ({ ...prev, storeUrl: e.target.value }))} placeholder="https://..." />
+              </div>
+            </div>
+
+            {/* App Icon */}
+            <div>
+              <label className="block text-sm font-medium mb-2">App Icon *</label>
+              <label
+                htmlFor="icon-upload"
+                className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
+                {iconFile && iconUrl ? (
+                  <div className="flex items-center gap-2">
+                    <img src={iconUrl} alt="Icon preview" className="w-12 h-12 rounded object-cover" />
+                    <span className="text-sm">{iconFile.name}</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center">
+                    <ImageIcon className="w-6 h-6 mb-1 text-gray-400" />
+                    <p className="text-sm text-gray-500">Click to upload app icon</p>
                   </div>
                 )}
-              </CardContent>
+                <input id="icon-upload" type="file" accept="image/*" className="hidden" onChange={handleIconSelect} />
+              </label>
+            </div>
 
-              {/* Download Section */}
-              <CardFooter className="w-full bg-[#84CC9A] border-t border-gray-300 px-2 py-2">
-                <div className="flex flex-col items-start space-y-1 w-full">
-                  {/* Download Button */}
-                  <div className="w-full">
-                    {item.status === "published" ? (
-                      <Button
-                        size="sm"
-                        className="h-8 px-4 text-sm bg-green-700 hover:bg-green-800 text-white flex items-center gap-1 whitespace-nowrap min-w-[120px] justify-start"
-                        onClick={() => {
-                          if (item.storeUrl) {
-                            window.open(item.storeUrl, "_blank");
-                          }
-                        }}
-                      >
-                        <Download className="h-4 w-4" />
-                        Download
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="h-8 px-4 text-sm bg-gray-500 text-white flex items-center gap-1 min-w-[120px] justify-start"
-                        disabled
-                      >
-                        Coming soon
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Store Badge */}
-                  <div className="h-9">
-                    <Image
-                      src={item.store === "google-play" ? "/google-play-badge.png" : "/app-store-badge.png"}
-                      alt="스토어 배지"
-                      width={120}
-                      height={28}
-                      className="h-9 object-contain"
-                    />
-                  </div>
+            {/* Screenshots */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Screenshots</label>
+              <label
+                htmlFor="screenshots-upload"
+                className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
+                <div className="flex flex-col items-center">
+                  <ImageIcon className="w-6 h-6 mb-1 text-gray-400" />
+                  <p className="text-sm text-gray-500">Click to upload screenshots</p>
                 </div>
-              </CardFooter>
-            </Card>
-          ))
-        )}
-      </div>
+                <input id="screenshots-upload" type="file" multiple accept="image/*" className="hidden" onChange={handleScreenshotsSelect} />
+              </label>
+              {screenshotFiles.length > 0 && (
+                <div className="grid grid-cols-4 gap-2 mt-3">
+                  {screenshotFiles.map((file, index) =>
+                    screenshotUrls[index] ? (
+                      <div key={index} className="relative group">
+                        <img src={screenshotUrls[index]} alt={`Screenshot ${index + 1}`} className="w-full h-20 object-cover rounded" />
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-1 right-1 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeScreenshot(index)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : null
+                  )}
+                </div>
+              )}
+            </div>
 
-      {/* 하단 금색 방향키 (< >) */}
-      <div className="flex items-center justify-center gap-4 -mt-2">
-        <Button
-          aria-label="왼쪽으로 스크롤"
-          className="rounded-full px-4 py-2 text-xl font-bold bg-[#D4AF37] text-black hover:bg-[#B9931E] focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
-          onClick={() => scrollByStep(-1)}
-        >
-          &lt;
-        </Button>
-        <Button
-          aria-label="오른쪽으로 스크롤"
-          className="rounded-full px-4 py-2 text-xl font-bold bg-[#D4AF37] text-black hover:bg-[#B9931E] focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
-          onClick={() => scrollByStep(1)}
-        >
-          &gt;
-        </Button>
-      </div>
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium mb-2">{adminTexts.tags}</label>
+              <Input value={formData.tags} onChange={(e) => setFormData((prev) => ({ ...prev, tags: e.target.value }))} placeholder={adminTexts.tagsPlaceholder} />
+              <p className="text-xs text-gray-500 mt-1">{adminTexts.tagsExample}</p>
+            </div>
+          </div>
 
-      {/* pagination removed for horizontal scroller */}
-
-      {/* 업로드 다이얼로그 (admin 전용): featured/events에서만 동작 */}
-      {isAdmin && type === "featured" && (
-        <AdminFeaturedUploadDialog
-          isOpen={isFeaturedDialogOpen}
-          onClose={() => setFeaturedDialogOpen(false)}
-          onUploadSuccess={() => {
-            setFeaturedDialogOpen(false);
-            loadItems();
-          }}
-          targetGallery={type}
-        />
-      )}
-      {isAdmin && type === "events" && (
-        <AdminEventsUploadDialog
-          isOpen={isEventsDialogOpen}
-          onClose={() => setEventsDialogOpen(false)}
-          onUploadSuccess={() => {
-            setEventsDialogOpen(false);
-            loadItems();
-          }}
-          targetGallery={type}
-        />
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsOpen(false)}>
+              {adminTexts.cancel}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                logout();
+                if (typeof window !== "undefined" && window.adminModeChange) {
+                  try {
+                    window.adminModeChange(false);
+                  } catch {}
+                }
+              }}
+            >
+              {adminTexts.logout}
+            </Button>
+            <Button onClick={createAdminButtonHandler(handleSubmit)} disabled={!isFormValid}>
+              {adminTexts.upload}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
-export default GalleryManager;
