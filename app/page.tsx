@@ -861,30 +861,30 @@ function HomeContent() {
 
                      <div className="p-3" style={{ backgroundColor: '#D1E2EA' }}>
                        {/* App Icon and Basic Info */}
-                       <div className="flex items-start space-x-3 mb-3">
+                       <div className="flex items-start space-x-4 mb-4">
                                                    <Image
                            src={latestApp.iconUrl || "/icon-192x192.png"}
                            alt={latestApp.name}
-                           width={64}
-                           height={64}
+                           width={80}
+                           height={80}
                            unoptimized={isBlobUrl(latestApp.iconUrl || "/icon-192x192.png")}
-                           className="w-16 h-16 rounded-xl object-cover object-center flex-shrink-0"
+                           className="w-20 h-20 rounded-xl object-cover object-center flex-shrink-0"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjZjNmNGY2Ii8+CjxwYXRoIGQ9Ik0xMiA2QzEwLjM0IDYgOSA3LjM0IDkgOUM5IDEwLjY2IDEwLjM0IDEyIDEyIDEyQzEzLjY2IDEyIDE1IDEwLjY2IDE1IDlDMTUgNy4zNCAxMy42NiA2IDEyIDZaTTEyIDRDMTQuNzYgNCAxNyA2LjI0IDE3IDlDMTcgMTEuNzYgMTQuNzYgMTQgMTIgMTRDOS4yNCAxNCA3IDExLjc2IDcgOUM3IDYuMjQgOS4yNCA0IDEyIDRaTTEyIDE2QzEwLjM0IDE2IDkgMTcuMzQgOSAxOUg3QzcgMTYuMjQgOS4yNCAxNCAxMiAxNEMxNC43NiAxNCAxNyAxNi4yNCAxNyAxOUgxNUMxNSAxNy4zNCAxMy42NiAxNiAxMiAxNloiIGZpbGw9IiM5Y2EzYWYiLz4KPC9zdmc+";
                             }}
                           />
                          <div className="flex-1 min-w-0">
-                           <h3 className="font-semibold text-lg mb-1 truncate notranslate" translate="no">{latestApp.name}</h3>
-                           <p className="text-sm text-muted-foreground truncate notranslate" translate="no">{latestApp.developer}</p>
+                           <h3 className="font-bold text-xl mb-1 truncate notranslate text-[#D4AF37]" translate="no">{latestApp.name}</h3>
+                           <p className="text-base text-muted-foreground truncate notranslate" translate="no">{latestApp.developer}</p>
                          </div>
                        </div>
 
                        {/* Rating and Stats */}
-                       <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
-                         <div className="flex items-center space-x-2">
+                       <div className="flex items-center justify-between text-base text-muted-foreground mb-4">
+                         <div className="flex items-center space-x-3">
                            <div className="flex items-center gap-1">
-                             <span className="text-yellow-400">★</span>
+                             <span className="text-yellow-400 text-lg">★</span>
                              <span>{latestApp.rating}</span>
                            </div>
                            <span>{latestApp.downloads}</span>
@@ -894,14 +894,14 @@ function HomeContent() {
 
                        {/* Tags */}
                        {latestApp.tags && latestApp.tags.length > 0 && (
-                         <div className="flex flex-wrap gap-1 mb-3">
+                         <div className="flex flex-wrap gap-2 mb-4">
                            {latestApp.tags.slice(0, 2).map((tag, index) => (
-                             <span key={index} className="text-sm px-2 py-0.5 bg-gray-200 text-gray-700 rounded">
+                             <span key={index} className="text-base px-3 py-1 bg-gray-200 text-gray-700 rounded">
                                {tag}
                              </span>
                            ))}
                            {latestApp.tags.length > 2 && (
-                             <span className="text-sm text-muted-foreground">
+                             <span className="text-base text-muted-foreground">
                                +{latestApp.tags.length - 2}
                              </span>
                            )}
@@ -912,7 +912,7 @@ function HomeContent() {
                        <div className="mt-0 border-t border-gray-300" style={{ backgroundColor: '#84CC9A' }}>
                          <div className="flex items-center justify-between p-3 w-full">
                            <button
-                             className="h-8 px-4 text-sm bg-green-700 hover:bg-green-800 text-white flex items-center gap-1 rounded"
+                             className="h-9 px-5 text-base bg-green-700 hover:bg-green-800 text-white flex items-center gap-1 rounded"
                              onClick={() => {
                                if (latestApp.storeUrl) {
                                  // 이벤트 카드의 memo2는 현재 탭에서 열기
@@ -928,25 +928,25 @@ function HomeContent() {
                            </button>
                            
                            {/* 스토어 배지 이미지 */}
-                           <div className="h-9 flex items-center" onMouseEnter={blockTranslationFeedback}>
+                           <div className="h-10 flex items-center" onMouseEnter={blockTranslationFeedback}>
                              {latestApp.store === "google-play" ? (
                                <Image 
                                    src="/google-play-badge.png" 
                                    alt="Google Play에서 다운로드"
-                                   width={120}
-                                   height={28}
+                                   width={140}
+                                   height={32}
                                    unoptimized={isBlobUrl('/google-play-badge.png')}
-                                   className="h-9 object-contain"
+                                   className="h-10 object-contain"
                                    onMouseEnter={blockTranslationFeedback}
                                  />
                              ) : (
                                <Image 
                                  src="/app-store-badge.png" 
                                  alt="App Store에서 다운로드"
-                                 width={120}
-                                 height={28}
+                                 width={140}
+                                 height={32}
                                  unoptimized={isBlobUrl('/app-store-badge.png')}
-                                 className="h-9 object-contain"
+                                 className="h-10 object-contain"
                                  onMouseEnter={blockTranslationFeedback}
                                />
                              )}
