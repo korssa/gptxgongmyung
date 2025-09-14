@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,7 @@ export function GalleryManager({
   // Admin upload dialog states (featured/events 전용)
   const [isFeaturedDialogOpen, setFeaturedDialogOpen] = useState(false);
   const [isEventsDialogOpen, setEventsDialogOpen] = useState(false);
+  const scrollerRef = useRef<HTMLDivElement | null>(null);
 
   const loadItems = useCallback(async () => {
     try {
@@ -133,7 +134,7 @@ export function GalleryManager({
       )}
 
       {/* 가로 스크롤 카드 행 (전체 필드 포함) */}
-      <div className="flex flex-row gap-4 overflow-x-auto py-4 px-2">
+      <div ref={scrollerRef} className="flex flex-row gap-4 overflow-x-auto py-4 px-2">
         {items.length === 0 ? (
           type !== "normal" && (
             <div className="col-span-full">
@@ -307,6 +308,34 @@ export function GalleryManager({
             </Card>
           ))
         )}
+      </div>
+
+      {/* 하단 금색 방향키 (< >) */}
+      <div className="flex items-center justify-center gap-4 -mt-2">
+        <Button
+          aria-label="왼쪽으로 스크롤"
+          className="rounded-full px-4 py-2 text-xl font-bold bg-[#D4AF37] text-black hover:bg-[#B9931E] focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
+          onClick={() => {
+            const el = scrollerRef.current;
+            if (!el) return;
+            const amount = Math.max(320, Math.floor(el.clientWidth * 0.9));
+            el.scrollBy({ left: -amount, behavior: "smooth" });
+          }}
+        >
+          &lt;
+        </Button>
+        <Button
+          aria-label="오른쪽으로 스크롤"
+          className="rounded-full px-4 py-2 text-xl font-bold bg-[#D4AF37] text-black hover:bg-[#B9931E] focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
+          onClick={() => {
+            const el = scrollerRef.current;
+            if (!el) return;
+            const amount = Math.max(320, Math.floor(el.clientWidth * 0.9));
+            el.scrollBy({ left: amount, behavior: "smooth" });
+          }}
+        >
+          &gt;
+        </Button>
       </div>
 
       {/* pagination removed for horizontal scroller */}
