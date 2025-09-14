@@ -834,27 +834,25 @@ function HomeContent() {
                    {/* 메인 카드 - 기존 갤러리 카드와 완전히 동일한 반응형 사이즈 */}
                    <div className="relative group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 new-release-card w-full" style={{ backgroundColor: '#D1E2EA' }} onMouseEnter={blockTranslationFeedback} onClick={(e) => e.stopPropagation()}>
                      <div className="relative">
-                       {/* Screenshot/App Preview (as provided) */}
-                       <div className="w-full mx-auto">
-                         <div className="aspect-square sm:aspect-[9/16] overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
-                           {latestApp.screenshotUrls && latestApp.screenshotUrls.length > 0 ? (
-                             <Image
-                               src={latestApp.screenshotUrls[0]}
-                               alt={latestApp.name}
-                               fill
-                               unoptimized={isBlobUrl(latestApp.screenshotUrls[0])}
-                               className="object-cover object-center"
-                             />
-                           ) : (
-                             <div className="absolute inset-0 w-full h-full flex items-center justify-center text-6xl">
-                               📱
-                             </div>
-                           )}
-                           <div className="absolute bottom-1 left-1">
-                             <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
-                               {t(latestApp.status as keyof typeof t)}
-                             </span>
+                       {/* 모바일: 170px 정사각형, sm+: 풀폭 9:16 */}
+                       <div className="w-[170px] aspect-square sm:w-full sm:aspect-[9/16] mx-auto overflow-hidden relative bg-gradient-to-br from-blue-50 to-purple-50">
+                         {latestApp.screenshotUrls && latestApp.screenshotUrls.length > 0 ? (
+                           <Image
+                             src={latestApp.screenshotUrls[0]}
+                             alt={latestApp.name}
+                             fill
+                             unoptimized={isBlobUrl(latestApp.screenshotUrls[0])}
+                             className="object-cover object-center"
+                           />
+                         ) : (
+                           <div className="absolute inset-0 w-full h-full flex items-center justify-center text-6xl">
+                             📱
                            </div>
+                         )}
+                         <div className="absolute bottom-1 left-1">
+                           <span className="bg-green-500 text-white text-xs px-2 py-1 rounded">
+                             {t(latestApp.status as keyof typeof t)}
+                           </span>
                          </div>
                        </div>
                      </div>
