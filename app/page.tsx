@@ -835,7 +835,7 @@ function HomeContent() {
                    <div className="relative group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 new-release-card w-full" style={{ backgroundColor: '#D1E2EA' }} onMouseEnter={blockTranslationFeedback} onClick={(e) => e.stopPropagation()}>
                      <div className="relative">
                        {/* Screenshot/App Preview: 2/3 on mobile, full on sm+ */}
-                       <div className="w-2/3 sm:w-full mx-auto">
+                       <div className=" sm:w-full mx-auto">
                          <div className="aspect-[9/16] sm:aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
                            {latestApp.screenshotUrls && latestApp.screenshotUrls.length > 0 ? (
                              <Image
