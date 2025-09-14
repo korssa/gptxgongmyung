@@ -174,7 +174,7 @@ export function GalleryManager({
             >
               <div className="relative">
                 {/* Screenshot/App Preview */}
-                <div className={`${type === "normal" ? "sm:w-full" : "w-full"} mx-auto`}>
+                <div className="w-full mx-auto">
                   <div className="aspect-square overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 relative">
                     {item.screenshotUrls && item.screenshotUrls.length > 0 ? (
                       <Image
@@ -234,14 +234,14 @@ export function GalleryManager({
 
               <CardContent className="px-1.5 py-0" style={{ backgroundColor: "#D1E2EA" }}>
                 {/* App Icon and Basic Info */}
-                <div className="flex items-start space-x-2 mb-1.5">
+                <div className="flex items-start space-x-2 mb-2">
                   <Image
                     src={item.iconUrl}
                     alt={item.name}
-                    width={24}
-                    height={24}
+                    width={64}
+                    height={64}
                     unoptimized
-                    className="w-6 h-6 rounded-lg object-cover object-center flex-shrink-0"
+                    className="w-16 h-16 rounded-xl object-cover object-center flex-shrink-0"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src =
@@ -249,20 +249,20 @@ export function GalleryManager({
                     }}
                   />
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-xs mb-0.5 truncate notranslate" translate="no">
+                    <h3 className="font-semibold text-lg mb-1 truncate notranslate" translate="no">
                       {item.name}
                     </h3>
-                    <p className="text-[10px] text-muted-foreground truncate notranslate" translate="no">
+                    <p className="text-sm text-muted-foreground truncate notranslate" translate="no">
                       {item.developer}
                     </p>
                   </div>
                 </div>
 
                 {/* Rating and Stats */}
-                <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
+                <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
                   <div className="flex items-center space-x-2">
                     <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                       <span>{item.rating}</span>
                     </div>
                     <span>{item.downloads}</span>
@@ -272,41 +272,41 @@ export function GalleryManager({
 
                 {/* Tags */}
                 {item.tags && item.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-0">
+                  <div className="flex flex-wrap gap-1.5 mb-3">
                     {item.tags.slice(0, 2).map((tag, index) => (
-                      <Badge key={index} variant="secondary" className="text-[10px] px-1.5 py-0">
+                      <Badge key={index} variant="secondary" className="text-sm px-2 py-0.5">
                         {tag}
                       </Badge>
                     ))}
                     {item.tags.length > 2 && (
-                      <span className="text-[10px] text-muted-foreground">+{item.tags.length - 2}</span>
+                      <span className="text-sm text-muted-foreground">+{item.tags.length - 2}</span>
                     )}
                   </div>
                 )}
               </CardContent>
 
               {/* Download Section */}
-              <CardFooter className="w-full bg-[#84CC9A] border-t border-gray-300 px-2 py-1.5">
+              <CardFooter className="w-full bg-[#84CC9A] border-t border-gray-300 px-2 py-2">
                 <div className="flex flex-col items-start space-y-1 w-full">
                   {/* Download Button */}
                   <div className="w-full">
                     {item.status === "published" ? (
                       <Button
                         size="sm"
-                        className="h-5 px-2 text-[10px] bg-green-700 hover:bg-green-800 text-white flex items-center gap-1 whitespace-nowrap min-w-[100px] justify-start"
+                        className="h-8 px-4 text-sm bg-green-700 hover:bg-green-800 text-white flex items-center gap-1 whitespace-nowrap min-w-[120px] justify-start"
                         onClick={() => {
                           if (item.storeUrl) {
                             window.open(item.storeUrl, "_blank");
                           }
                         }}
                       >
-                        <Download className="h-2.5 w-2.5" />
+                        <Download className="h-4 w-4" />
                         Download
                       </Button>
                     ) : (
                       <Button
                         size="sm"
-                        className="h-5 px-2 text-[10px] bg-gray-500 text-white flex items-center gap-1 min-w-[100px] justify-start"
+                        className="h-8 px-4 text-sm bg-gray-500 text-white flex items-center gap-1 min-w-[120px] justify-start"
                         disabled
                       >
                         Coming soon
@@ -315,13 +315,13 @@ export function GalleryManager({
                   </div>
 
                   {/* Store Badge */}
-                  <div className="h-4">
+                  <div className="h-9">
                     <Image
                       src={item.store === "google-play" ? "/google-play-badge.png" : "/app-store-badge.png"}
                       alt="스토어 배지"
-                      width={80}
-                      height={16}
-                      className="h-4 object-contain"
+                      width={120}
+                      height={28}
+                      className="h-9 object-contain"
                     />
                   </div>
                 </div>
