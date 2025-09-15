@@ -20,6 +20,13 @@ const AdminEventsUploadDialog = dynamic(
   { ssr: false, loading: () => null }
 );
 
+// Type guard to safely detect optional imageUrl on items returned from API
+function hasImageUrl(obj: unknown): obj is { imageUrl: string } {
+  if (!obj || typeof obj !== "object") return false;
+  const maybe = (obj as { imageUrl?: unknown }).imageUrl;
+  return typeof maybe === "string" && maybe.length > 0;
+}
+
 interface GalleryManagerProps {
   type: "gallery" | "featured" | "events" | "normal";
   title: string;
@@ -309,9 +316,9 @@ export function GalleryManager({
                         sizes="(min-width: 768px) 340px, 170px"
                         className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
                       />
-                    ) : (item as any).imageUrl ? (
+                    ) : hasImageUrl(item) ? (
                       <Image
-                        src={(item as any).imageUrl}
+                        src={(item as { imageUrl: string }).imageUrl}
                         alt={item.name}
                         fill
                         sizes="(min-width: 768px) 340px, 170px"
