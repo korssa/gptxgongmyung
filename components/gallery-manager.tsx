@@ -13,11 +13,11 @@ import Image from "next/image";
 // Dynamic imports for admin dialogs (reduce initial bundle for non-admin users)
 // Use default export to avoid named export mismatches in production builds
 const AdminFeaturedUploadDialog = dynamic(
-  () => import("./admin-featured-upload-dialog"),
+  () => import("./admin-featured-upload-dialog").then((m) => m.default || m.AdminFeaturedUploadDialog),
   { ssr: false, loading: () => null }
 );
 const AdminEventsUploadDialog = dynamic(
-  () => import("./admin-events-upload-dialog"),
+  () => import("./admin-events-upload-dialog").then((m) => m.default || m.AdminEventsUploadDialog),
   { ssr: false, loading: () => null }
 );
 
