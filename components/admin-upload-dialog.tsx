@@ -1,5 +1,4 @@
 "use client";
-/* eslint-disable @next/next/no-img-element */
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Upload, Image as ImageIcon, X, Lock } from "lucide-react";
+import Image from "next/image";
 import { AppFormData, AppStore, AppStatus } from "@/types";
 
 import { useAdmin } from "@/hooks/use-admin";
@@ -49,9 +49,12 @@ const adminTexts = {
   passwordPlaceholder: "Enter admin password",
   login: "Login",
   adminPanel: "Admin Panel",
+  appCategory: "App Category",
+  featured: "Featured",
+  events: "Events",
 };
 
-interface AdminUploadDialogProps {
+interface AdminEventsUploadDialogProps {
   onUpload?: (data: AppFormData, files: { icon: File; screenshots: File[] }) => void;
   buttonProps?: {
     size?: "sm" | "lg" | "default";
@@ -61,10 +64,10 @@ interface AdminUploadDialogProps {
   isOpen?: boolean;
   onClose?: () => void;
   onUploadSuccess?: () => void;
-  targetGallery?: "gallery" | "featured" | "events" | "normal";
+  targetGallery?: "gallery" | "featured" | "events";
 }
 
-export function AdminUploadDialog({
+export function AdminEventsUploadDialog({
   onUpload,
   buttonProps,
   buttonText = "Upload",
@@ -72,7 +75,7 @@ export function AdminUploadDialog({
   onClose,
   onUploadSuccess,
   targetGallery,
-}: AdminUploadDialogProps) {
+}: AdminEventsUploadDialogProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
   const setIsOpen = externalIsOpen !== undefined ? onClose || (() => {}) : setInternalIsOpen;
@@ -105,38 +108,34 @@ export function AdminUploadDialog({
     size: "50MB",
     category: "",
     storeUrl: "",
-    appCategory: "normal", // ✅ 항상 normal
+    appCategory: "events", // ✅ 기본값을 events로 설정
   });
 
   const { isAuthenticated, login, logout } = useAdmin();
 
   useEffect(() => {
-    if (!iconFile || urlManager.isDisposed()) {
+    if (iconUrl) {
+      urlManager.revokeObjectURL(iconUrl);
       setIconUrl(null);
-      return;
     }
-    const url = urlManager.createObjectURL(iconFile);
-    setIconUrl(url);
-    return () => {
-      if (url) urlManager.revokeObjectURL(url);
-    };
-  }, [iconFile, urlManager]);
+    if (iconFile && !urlManager.isDisposed()) {
+      const url = urlManager.createObjectURL(iconFile);
+      if (url) setIconUrl(url);
+    }
+  }, [iconFile, urlManager, iconUrl]);
 
   useEffect(() => {
-    if (screenshotFiles.length === 0 || urlManager.isDisposed()) {
-      setScreenshotUrls([]);
-      return;
+    screenshotUrls.forEach((url) => {
+      if (url) urlManager.revokeObjectURL(url);
+    });
+    setScreenshotUrls([]);
+    if (screenshotFiles.length > 0 && !urlManager.isDisposed()) {
+      const urls = screenshotFiles
+        .map((file) => urlManager.createObjectURL(file))
+        .filter((url) => url !== null) as string[];
+      setScreenshotUrls(urls);
     }
-    const urls = screenshotFiles
-      .map((file) => urlManager.createObjectURL(file))
-      .filter((url) => url !== null) as string[];
-    setScreenshotUrls(urls);
-    return () => {
-      urls.forEach((url) => {
-        if (url) urlManager.revokeObjectURL(url);
-      });
-    };
-  }, [screenshotFiles, urlManager]);
+  }, [screenshotFiles, urlManager, screenshotUrls]);
 
   const handleLogin = () => {
     if (login(password)) {
@@ -184,7 +183,7 @@ export function AdminUploadDialog({
         formDataToSend.append("isPublished", "true");
         formDataToSend.append("store", formData.store || "google-play");
         formDataToSend.append("storeUrl", formData.storeUrl || "");
-        formDataToSend.append("appCategory", formData.appCategory || "normal");
+        formDataToSend.append("appCategory", formData.appCategory || "events");
 
         const response = await fetch(`/api/gallery?type=${targetGallery}`, {
           method: "POST",
@@ -192,16 +191,16 @@ export function AdminUploadDialog({
         });
 
         if (response.ok) {
+          console.log(`✅ 갤러리 ${targetGallery}에 업로드 성공`);
           onUploadSuccess();
         } else {
+          console.warn("❌ 갤러리 업로드 실패");
           alert("업로드에 실패했습니다.");
         }
       } catch {
         alert("업로드 중 오류가 발생했습니다.");
       }
     } else if (onUpload) {
-      // targetGallery가 없고 onUpload가 제공되면, 단일 경로로 저장: 상위 onUpload 콜백에 위임
-      // 이 경로는 /api/apps/type 저장 플로우를 사용하므로, /api/gallery로 중복 전송하지 않습니다.
       onUpload(formData, { icon: iconFile, screenshots: screenshotFiles });
     }
 
@@ -221,7 +220,7 @@ export function AdminUploadDialog({
       size: "50MB",
       category: "",
       storeUrl: "",
-      appCategory: "normal", // ✅ 고정
+      appCategory: "events", // ✅ reset 값
     });
   };
 
@@ -357,6 +356,32 @@ export function AdminUploadDialog({
               </div>
             </div>
 
+            {/* App Category - Featured와 Events만 선택 가능 */}
+            <div>
+              <label className="block text-sm font-medium mb-2">{adminTexts.appCategory}</label>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-start h-10 bg-white hover:bg-gray-50 border border-gray-200"
+                onClick={() => {
+                  try {
+                    blockTranslationFeedback();
+                    const categories = ["featured", "events"] as const;
+                    const currentCategory = formData.appCategory === "featured" || formData.appCategory === "events" 
+                      ? formData.appCategory 
+                      : "events";
+                    const currentIndex = categories.indexOf(currentCategory);
+                    const nextIndex = (currentIndex + 1) % categories.length;
+                    const newCategory = categories[nextIndex];
+                    setFormData((prev) => ({ ...prev, appCategory: newCategory }));
+                  } catch {}
+                }}
+              >
+                {formData.appCategory === "featured" && "⭐ " + adminTexts.featured}
+                {formData.appCategory === "events" && "🎉 " + adminTexts.events}
+              </Button>
+            </div>
+
             {/* Additional Info */}
             <div className="grid grid-cols-3 gap-4">
               <div>
@@ -393,7 +418,7 @@ export function AdminUploadDialog({
               >
                 {iconFile && iconUrl ? (
                   <div className="flex items-center gap-2">
-                    <img src={iconUrl} alt="Icon preview" className="w-12 h-12 rounded object-cover" />
+                    <Image src={iconUrl} alt="Icon preview" width={48} height={48} unoptimized className="w-12 h-12 rounded object-cover" />
                     <span className="text-sm">{iconFile.name}</span>
                   </div>
                 ) : (
@@ -424,7 +449,9 @@ export function AdminUploadDialog({
                   {screenshotFiles.map((file, index) =>
                     screenshotUrls[index] ? (
                       <div key={index} className="relative group">
-                        <img src={screenshotUrls[index]} alt={`Screenshot ${index + 1}`} className="w-full h-20 object-cover rounded" />
+                        <div className="w-full h-20 relative">
+                          <Image src={screenshotUrls[index]} alt={`Screenshot ${index + 1}`} fill sizes="(max-width: 768px) 25vw, 10vw" unoptimized className="object-cover rounded" />
+                        </div>
                         <Button
                           variant="destructive"
                           size="sm"
