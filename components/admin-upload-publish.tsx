@@ -1,7 +1,7 @@
 "use client";
-/* eslint-disable @next/next/no-img-element */
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 // Badge 제거 - 사용하지 않음
@@ -505,11 +505,7 @@ export function AdminUploadPublishDialog({ onUpload, onUploadAction, buttonProps
               >
                 {iconFile && iconUrl ? (
                   <div className="flex items-center gap-2">
-                    <img
-                      src={iconUrl}
-                      alt="Icon preview"
-                      className="w-12 h-12 rounded object-cover"
-                    />
+                    <Image src={iconUrl} alt="Icon preview" width={48} height={48} unoptimized className="w-12 h-12 rounded object-cover" />
                     <span className="text-sm">{iconFile.name}</span>
                   </div>
                 ) : (
@@ -557,11 +553,9 @@ export function AdminUploadPublishDialog({ onUpload, onUploadAction, buttonProps
                   {screenshotFiles.map((file, index) => (
                     screenshotUrls[index] ? (
                       <div key={index} className="relative group">
-                        <img
-                          src={screenshotUrls[index]}
-                          alt={`Screenshot ${index + 1}`}
-                          className="w-full h-20 object-cover rounded"
-                        />
+                        <div className="w-full h-20 relative">
+                          <Image src={screenshotUrls[index]} alt={`Screenshot ${index + 1}`} fill sizes="(max-width: 768px) 25vw, 10vw" unoptimized className="object-cover rounded" />
+                        </div>
                         <Button
                           variant="destructive"
                           size="sm"
