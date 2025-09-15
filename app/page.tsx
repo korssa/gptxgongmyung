@@ -8,16 +8,15 @@ declare global {
     adminModeChange?: (visible: boolean) => void;
   }
 }
-import dynamic from "next/dynamic";
 import { Header } from "@/components/layout/header";
 import { HiddenAdminAccess } from "@/components/hidden-admin-access";
 import { EditAppDialog } from "@/components/edit-app-dialog";
-const SnowAnimation = dynamic(() => import("@/components/snow-animation").then(m => m.SnowAnimation), { ssr: false });
-const MailForm = dynamic(() => import("@/components/mail-form").then(m => m.MailForm), { ssr: false });
+import { AdminUploadDialog } from "@/components/admin-upload-dialog";
+import { SnowAnimation } from "@/components/snow-animation";
+import { MailForm } from "@/components/mail-form";
 // ContentManager is imported in other files; not used directly here.
-const AppStoryList = dynamic(() => import("@/components/app-story-list").then(m => m.AppStoryList));
-const NewsList = dynamic(() => import("@/components/news-list").then(m => m.NewsList));
-const AdminUploadDialog = dynamic(() => import("@/components/admin-upload-dialog").then(m => m.default), { ssr: false });
+import { AppStoryList } from "@/components/app-story-list";
+import { NewsList } from "@/components/news-list";
 // Button not used in this file
 import { AppItem, AppFormData, FilterType, ContentType } from "@/types";
 import { useLanguage } from "@/hooks/use-language";
@@ -807,9 +806,9 @@ function HomeContent() {
       
       <Header 
         viewMode={viewMode} 
-        onViewModeChangeAction={setViewMode} 
+        onViewModeChange={setViewMode} 
         searchQuery={searchQuery}
-        onSearchChangeAction={setSearchQuery}
+        onSearchChange={setSearchQuery}
       />
       
                            <main className="container mx-auto py-2 max-w-6xl" style={{ maxWidth: '1152px' }}>
