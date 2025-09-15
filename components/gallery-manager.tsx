@@ -6,20 +6,13 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Trash2, Edit, Star, Download, User } from "lucide-react";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
-import dynamic from "next/dynamic";
+// dynamic import not used
 import { AppItem } from "@/types";
 import Image from "next/image";
 
-// Dynamic imports for admin dialogs (reduce initial bundle for non-admin users)
-// Use default export to avoid named export mismatches in production builds
-const AdminFeaturedUploadDialog = dynamic(
-  () => import("./admin-featured-upload-dialog").then((m) => m.default || m.AdminFeaturedUploadDialog),
-  { ssr: false, loading: () => null }
-);
-const AdminEventsUploadDialog = dynamic(
-  () => import("./admin-events-upload-dialog").then((m) => m.default || m.AdminEventsUploadDialog),
-  { ssr: false, loading: () => null }
-);
+// Switch to static client imports to avoid rare production mismatches with dynamic import chunking
+import AdminFeaturedUploadDialog from "./admin-featured-upload-dialog";
+import AdminEventsUploadDialog from "./admin-events-upload-dialog";
 
 // Type guard to safely detect optional imageUrl on items returned from API
 function hasImageUrl(obj: unknown): obj is { imageUrl: string } {
@@ -169,7 +162,9 @@ export function GalleryManager({
       const item = items.find((i) => i.id === itemId);
       if (confirm(`"${item?.name}"을(를) 삭제하시겠습니까?`)) {
         try {
-          const response = await fetch(`/api/gallery?type=${type}&id=${itemId}`, {
+          // 'normal' 뷰는 실제로 gallery 폴더에서 관리되므로 삭제시에도 gallery로 매핑
+          const deleteType = type === "normal" ? "gallery" : type;
+          const response = await fetch(`/api/gallery?type=${deleteType}&id=${itemId}`, {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
           });
@@ -515,8 +510,8 @@ export function GalleryManager({
 
       {/* pagination removed for horizontal scroller */}
 
-      {/* 업로드 다이얼로그 (admin 전용): featured/events에서만 동작 */}
-      {isAdmin && type === "featured" && (
+      {/* 업로드 다이얼로그 (admin 전용): featured/events에서만 동작 - open일 때만 렌더 */}
+      {isAdmin && type === "featured" && isFeaturedDialogOpen && (
         <AdminFeaturedUploadDialog
           isOpen={isFeaturedDialogOpen}
           onClose={() => setFeaturedDialogOpen(false)}
@@ -527,7 +522,7 @@ export function GalleryManager({
           targetGallery={type}
         />
       )}
-      {isAdmin && type === "events" && (
+      {isAdmin && type === "events" && isEventsDialogOpen && (
         <AdminEventsUploadDialog
           isOpen={isEventsDialogOpen}
           onClose={() => setEventsDialogOpen(false)}
