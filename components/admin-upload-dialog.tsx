@@ -186,6 +186,15 @@ export function AdminUploadDialog({
         formDataToSend.append("storeUrl", formData.storeUrl || "");
         formDataToSend.append("appCategory", formData.appCategory || "normal");
 
+        // Append screenshots as multiple 'screenshots' entries
+        if (screenshotFiles && screenshotFiles.length > 0) {
+          for (const shot of screenshotFiles) {
+            try {
+              formDataToSend.append("screenshots", shot);
+            } catch {}
+          }
+        }
+
         const response = await fetch(`/api/gallery?type=${targetGallery}`, {
           method: "POST",
           body: formDataToSend,
@@ -478,3 +487,4 @@ export function AdminUploadDialog({
 }
 
 export default AdminUploadDialog;
+
