@@ -19,15 +19,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, EyeOff, Eye, Calendar, User, FileText, ArrowLeft, Home } from "lucide-react";
+import { Plus, Edit, Trash2, EyeOff, Eye, Calendar, User, ArrowLeft, Home } from "lucide-react";
 import { ContentItem, ContentFormData, ContentType } from "@/types";
 import { useAdmin } from "@/hooks/use-admin";
 import { uploadFile } from "@/lib/storage-adapter";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
-import { loadContentsFromBlob, loadContentsByTypeFromBlob } from "@/lib/data-loader";
+import { loadContentsByTypeFromBlob } from "@/lib/data-loader";
 import { loadMemoDraft, saveMemoDraft, clearMemoDraft } from "@/lib/memo-storage";
 import Link from "next/link";
+import Image from "next/image";
 
 interface AppStoryListProps {
   type: string; // "appstory"
@@ -86,7 +86,6 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
         isPublished: typeof draft.isPublished === 'boolean' ? draft.isPublished : prev.isPublished,
       }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type, isAuthenticated]);
 
       // 폼 변경 즉시 저장
@@ -119,7 +118,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
           // 관리자일 경우 전체 콘텐츠, 일반 사용자는 게시된 콘텐츠만 표시
           setContents(isAuthenticated ? data : data.filter((c: ContentItem) => c.isPublished));
         }
-      } catch (err) {
+      } catch {
         // Failed to load contents
       } finally {
         setLoading(false);
@@ -166,7 +165,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
     blockTranslationFeedback();
 
     return () => observer.disconnect();
-  }, [type]);
+  }, [type, isAuthenticated]);
 
   // contents 변경 시 현재 페이지가 총 페이지 수를 넘지 않도록 보정
   useEffect(() => {
@@ -250,7 +249,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
       });
 
       if (response.ok) {
-        const result = await response.json();
+  await response.json();
         
         setIsDialogOpen(false);
         clearMemoDraft(type);
@@ -266,7 +265,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
             // 저장 후 첫 페이지로
             setCurrentPage(1);
           }
-              } catch (error) {
+              } catch {
         // 목록 새로고침 실패
       }
         
@@ -277,7 +276,7 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
         let errorData;
         try {
           errorData = JSON.parse(responseText);
-        } catch (parseError) {
+        } catch {
           errorData = { error: responseText || '알 수 없는 오류' };
         }
         
@@ -420,11 +419,14 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
                                 {/* 이미지가 있으면 본문 시작 부분에 배치 */}
                  {selected.imageUrl && (
                    <div className="flex justify-start mb-6">
-                     <img
+                     <Image
                        src={selected.imageUrl}
                        alt={selected.title}
-                       className="max-w-xs h-auto rounded shadow-lg"
+                       width={480}
+                       height={300}
+                       className="w-auto h-auto max-w-xs rounded shadow-lg"
                        style={{ maxHeight: '300px' }}
+                       sizes="(max-width: 640px) 320px, 480px"
                      />
                    </div>
                  )}
@@ -481,9 +483,27 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
   if (loading) {
     return (
       <div className="w-full max-w-4xl mx-auto px-4">
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto"></div>
-          <p className="text-gray-400 mt-4">App Story를 불러오는 중...</p>
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-white mb-2">App Story</h2>
+          <p className="text-gray-400">Discover the development process and stories behind our apps</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={`story-skeleton-${i}`} className="bg-gray-800/50 border-2 border-gray-700">
+              <div className="mb-3 aspect-square overflow-hidden rounded-lg">
+                <div className="w-full h-full bg-gray-700 animate-pulse" />
+              </div>
+              <CardHeader className="pb-3">
+                <div className="h-5 bg-gray-700 rounded animate-pulse w-3/4 mb-2" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex items-center justify-between text-sm text-gray-400">
+                  <div className="h-3 bg-gray-700 rounded animate-pulse w-1/3" />
+                  <div className="h-3 bg-gray-700 rounded animate-pulse w-12" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
@@ -604,10 +624,13 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
                         </div>
                         {imagePreview && (
                           <div className="mt-2">
-                            <img
+                            <Image
                               src={imagePreview}
                               alt="미리보기"
+                              width={128}
+                              height={128}
                               className="w-32 h-32 object-cover rounded border"
+                              unoptimized
                             />
                           </div>
                         )}
@@ -774,10 +797,13 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
                       </div>
                       {imagePreview && (
                         <div className="mt-2">
-                          <img
+                          <Image
                             src={imagePreview}
                             alt="미리보기"
+                            width={128}
+                            height={128}
                             className="w-32 h-32 object-cover rounded border"
+                            unoptimized
                           />
                         </div>
                       )}
@@ -831,11 +857,13 @@ export function AppStoryList({ type, onBack }: AppStoryListProps) {
            >
             <CardHeader className="pb-3">
               {content.imageUrl && (
-                <div className="mb-3 aspect-square overflow-hidden rounded-lg">
-                  <img
+                <div className="mb-3 aspect-square overflow-hidden rounded-lg relative">
+                  <Image
                     src={content.imageUrl}
                     alt={content.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                 </div>
               )}
