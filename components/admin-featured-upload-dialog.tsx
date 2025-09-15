@@ -78,7 +78,15 @@ export function AdminFeaturedUploadDialog({
 }: AdminFeaturedUploadDialogProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
-  const setIsOpen = externalIsOpen !== undefined ? onClose || (() => {}) : setInternalIsOpen;
+  const setIsOpen = externalIsOpen !== undefined
+    ? ((open: boolean) => {
+        if (!open) {
+          try {
+            if (typeof onClose === "function") onClose();
+          } catch {}
+        }
+      })
+    : setInternalIsOpen;
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [iconFile, setIconFile] = useState<File | null>(null);
@@ -510,3 +518,5 @@ export function AdminFeaturedUploadDialog({
     </div>
   );
 }
+
+export default AdminFeaturedUploadDialog;
