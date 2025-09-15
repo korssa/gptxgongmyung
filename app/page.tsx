@@ -12,12 +12,12 @@ import dynamic from "next/dynamic";
 import { Header } from "@/components/layout/header";
 import { HiddenAdminAccess } from "@/components/hidden-admin-access";
 import { EditAppDialog } from "@/components/edit-app-dialog";
-import { AdminUploadDialog } from "@/components/admin-upload-dialog";
 const SnowAnimation = dynamic(() => import("@/components/snow-animation").then(m => m.SnowAnimation), { ssr: false });
 const MailForm = dynamic(() => import("@/components/mail-form").then(m => m.MailForm), { ssr: false });
 // ContentManager is imported in other files; not used directly here.
 const AppStoryList = dynamic(() => import("@/components/app-story-list").then(m => m.AppStoryList));
 const NewsList = dynamic(() => import("@/components/news-list").then(m => m.NewsList));
+const AdminUploadDialog = dynamic(() => import("@/components/admin-upload-dialog").then(m => m.AdminUploadDialog), { ssr: false });
 // Button not used in this file
 import { AppItem, AppFormData, FilterType, ContentType } from "@/types";
 import { useLanguage } from "@/hooks/use-language";
@@ -1340,3 +1340,4 @@ export default function Home() {
     </Suspense>
   );
 }
+
