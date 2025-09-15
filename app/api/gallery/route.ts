@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { list, put, del } from '@vercel/blob';
 
+// Ensure this route runs on the Edge runtime so Request.formData() works reliably
+export const runtime = 'edge';
+// Avoid caching for dynamic data
+export const dynamic = 'force-dynamic';
+
 // 갤러리 아이템 타입
 export interface GalleryItem {
   id: string;
@@ -30,12 +35,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Type parameter is required' }, { status: 400 });
     }
 
-    // Vercel Blob에서 해당 타입의 폴더 조회
-    const folderPaths = new Set([`gallery-${type}`]);
-    if (type === 'featured') {
-      folderPaths.add(`gallery-featured`);
+    // Vercel Blob에서 해당 타입의 폴더 조회 (gallery/normal은 동일 폴더 사용)
+    const folderPaths = new Set<string>();
+    if (type === 'gallery' || type === 'normal') {
+      folderPaths.add('gallery-gallery');
+    } else if (type === 'featured') {
+      folderPaths.add('gallery-featured');
     } else if (type === 'events') {
-      folderPaths.add(`gallery-events`);
+      folderPaths.add('gallery-events');
     }
     
     const allBlobs = [];
@@ -63,7 +70,7 @@ export async function GET(request: NextRequest) {
             items.push(data);
           }
         }
-      } catch (error) {
+  } catch {
       }
     }
 
@@ -83,7 +90,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(filteredItems);
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: '갤러리 조회 실패' }, { status: 500 });
   }
 }
@@ -99,7 +106,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Type parameter is required' }, { status: 400 });
     }
 
-    const contentType = request.headers.get('content-type');
+  const contentType = request.headers.get('content-type');
     let galleryItem: GalleryItem;
 
     if (contentType?.includes('application/json')) {
@@ -118,16 +125,21 @@ export async function POST(request: NextRequest) {
     } else {
       // FormData 처리 (기존 업로드 방식)
       const formData = await request.formData();
-      const title = formData.get('title') as string;
-      const content = formData.get('content') as string;
-      const author = formData.get('author') as string;
-      const tags = formData.get('tags') as string;
-      const isPublished = formData.get('isPublished') === 'true';
-      const store = formData.get('store') as 'google-play' | 'app-store' | null;
-      const storeUrl = formData.get('storeUrl') as string | null;
-      const appCategory = formData.get('appCategory') as string | null;
-  const file = formData.get('file') as File | null; // 아이콘 파일
-  const screenshots = formData.getAll('screenshots') as File[]; // 스크린샷 다중 파일
+      const title = (formData.get('title') ?? '') as string;
+      const content = (formData.get('content') ?? '') as string;
+      const author = (formData.get('author') ?? '') as string;
+      const tags = (formData.get('tags') ?? '') as string;
+      const isPublished = (formData.get('isPublished') as string) === 'true';
+      const store = (formData.get('store') as 'google-play' | 'app-store' | null) ?? null;
+      const storeUrl = (formData.get('storeUrl') as string | null) ?? null;
+      const appCategory = (formData.get('appCategory') as string | null) ?? null;
+      const fileMaybe = formData.get('file'); // 아이콘 파일 (string | File | null)
+      const screenshotsMaybe = formData.getAll('screenshots'); // (Array<string | File>)
+
+      const file = fileMaybe instanceof File && fileMaybe.size > 0 ? fileMaybe : null;
+      const screenshots = (Array.isArray(screenshotsMaybe)
+        ? screenshotsMaybe.filter((s): s is File => s instanceof File && s.size > 0)
+        : []) as File[];
 
       if (!title || !content || !author) {
         return NextResponse.json({ error: '필수 필드가 누락되었습니다' }, { status: 400 });
@@ -140,9 +152,8 @@ export async function POST(request: NextRequest) {
   let iconUrl: string | undefined;
   const screenshotUrls: string[] = [];
 
-      // 이미지 업로드 - type에 따라 경로 결정
-      // 업로드 폴더 결정
-      const imageFolder = (type === 'gallery' || type === 'normal') ? 'gallery-gallery' : `gallery-${type}`;
+  // 이미지 업로드 - type에 따라 경로 결정 (gallery/normal 공용 폴더)
+  const imageFolder = (type === 'gallery' || type === 'normal') ? 'gallery-gallery' : `gallery-${type}`;
 
       if (file) {
         const ext = file.name.includes('.') ? file.name.split('.').pop() : 'png';
@@ -188,9 +199,9 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    // JSON 파일로 저장 - type에 따라 경로 결정
+  // JSON 파일로 저장 - type에 따라 경로 결정 (gallery/normal 공용 폴더)
     const jsonFilename = `${galleryItem.id}.json`;
-    // type이 gallery 또는 normal이면 gallery-gallery 폴더에, 아니면 gallery-{type} 폴더에 저장
+  // type이 gallery 또는 normal이면 gallery-gallery 폴더에, 아니면 gallery-{type} 폴더에 저장
     const jsonFolder = (type === 'gallery' || type === 'normal') ? 'gallery-gallery' : `gallery-${type}`;
     const jsonBlob = await put(`${jsonFolder}/${jsonFilename}`, JSON.stringify(galleryItem, null, 2), {
       access: 'public',
@@ -203,7 +214,7 @@ export async function POST(request: NextRequest) {
       jsonUrl: jsonBlob.url 
     });
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: '갤러리 생성 실패' }, { status: 500 });
   }
 }
@@ -225,13 +236,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Item data and ID are required' }, { status: 400 });
     }
 
-    // Vercel Blob에서 해당 타입의 폴더 조회
-    // type별로 해당하는 폴더만 조회 (appCategory별 분리)
-    const folderPaths = new Set([`gallery-${type}`]);
-    if (type === 'featured') {
-      folderPaths.add(`gallery-featured`);
+    // Vercel Blob에서 해당 타입의 폴더 조회 (gallery/normal은 동일 폴더 사용)
+    const folderPaths = new Set<string>();
+    if (type === 'gallery' || type === 'normal') {
+      folderPaths.add('gallery-gallery');
+    } else if (type === 'featured') {
+      folderPaths.add('gallery-featured');
     } else if (type === 'events') {
-      folderPaths.add(`gallery-events`);
+      folderPaths.add('gallery-events');
     }
     
     const allBlobs = [];
@@ -255,10 +267,10 @@ export async function PUT(request: NextRequest) {
     // 기존 JSON 파일 삭제
     await del(existingFile.url);
 
-    // 새 JSON 파일 생성 - type에 따라 경로 결정
+  // 새 JSON 파일 생성 - type에 따라 경로 결정 (gallery/normal 공용 폴더)
     const jsonFilename = `${item.id}.json`;
-    // type이 gallery면 gallery-gallery 폴더에, 아니면 gallery-{type} 폴더에 저장
-    const jsonFolder = type === 'gallery' ? 'gallery-gallery' : `gallery-${type}`;
+  // type이 gallery 또는 normal이면 gallery-gallery 폴더에, 아니면 gallery-{type} 폴더에 저장
+  const jsonFolder = (type === 'gallery' || type === 'normal') ? 'gallery-gallery' : `gallery-${type}`;
     const jsonBlob = await put(`${jsonFolder}/${jsonFilename}`, JSON.stringify(item, null, 2), {
       access: 'public',
       contentType: 'application/json',
@@ -271,7 +283,7 @@ export async function PUT(request: NextRequest) {
       message: 'Item updated successfully'
     });
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: '갤러리 편집 실패' }, { status: 500 });
   }
 }
@@ -287,13 +299,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Type and ID parameters are required' }, { status: 400 });
     }
 
-    // Vercel Blob에서 해당 타입의 폴더 조회
-    // type별로 해당하는 폴더만 조회 (appCategory별 분리)
-    const folderPaths = new Set([`gallery-${type}`]);
-    if (type === 'featured') {
-      folderPaths.add(`gallery-featured`);
+    // Vercel Blob에서 해당 타입의 폴더 조회 (gallery/normal은 동일 폴더 사용)
+    const folderPaths = new Set<string>();
+    if (type === 'gallery' || type === 'normal') {
+      folderPaths.add('gallery-gallery');
+    } else if (type === 'featured') {
+      folderPaths.add('gallery-featured');
     } else if (type === 'events') {
-      folderPaths.add(`gallery-events`);
+      folderPaths.add('gallery-events');
     }
     
     const allBlobs = [];
@@ -317,19 +330,20 @@ export async function DELETE(request: NextRequest) {
     // JSON 파일 삭제
     await del(jsonFile.url);
 
-    // 이미지 파일도 삭제 (있는 경우) - 같은 폴더에서만
-    const imageFile = allBlobs.find(blob => 
-      blob.pathname.includes(`/${id}.`) && 
+    // 이미지 파일도 삭제 (있는 경우) - 해당 ID에 매칭되는 모든 이미지 삭제
+    const imageFiles = allBlobs.filter(blob => 
+      blob.pathname.includes(`/${id}-`) && 
       !blob.pathname.endsWith('.json')
     );
-
-    if (imageFile) {
-      await del(imageFile.url);
+    if (imageFiles.length > 0) {
+      for (const img of imageFiles) {
+        await del(img.url);
+      }
     }
 
     return NextResponse.json({ success: true, message: 'Item deleted successfully' });
 
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: '갤러리 삭제 실패' }, { status: 500 });
   }
 }
