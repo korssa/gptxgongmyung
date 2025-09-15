@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import Image from "next/image";
 import { Upload, Image as ImageIcon, X, Lock } from "lucide-react";
 import { AppFormData, AppStore, AppStatus } from "@/types";
 
@@ -185,15 +185,6 @@ export function AdminUploadDialog({
         formDataToSend.append("store", formData.store || "google-play");
         formDataToSend.append("storeUrl", formData.storeUrl || "");
         formDataToSend.append("appCategory", formData.appCategory || "normal");
-
-        // Append screenshots as multiple 'screenshots' entries
-        if (screenshotFiles && screenshotFiles.length > 0) {
-          for (const shot of screenshotFiles) {
-            try {
-              formDataToSend.append("screenshots", shot);
-            } catch {}
-          }
-        }
 
         const response = await fetch(`/api/gallery?type=${targetGallery}`, {
           method: "POST",
@@ -402,7 +393,7 @@ export function AdminUploadDialog({
               >
                 {iconFile && iconUrl ? (
                   <div className="flex items-center gap-2">
-                    <Image src={iconUrl} alt="Icon preview" width={48} height={48} unoptimized className="w-12 h-12 rounded object-cover" />
+                    <img src={iconUrl} alt="Icon preview" className="w-12 h-12 rounded object-cover" />
                     <span className="text-sm">{iconFile.name}</span>
                   </div>
                 ) : (
@@ -433,9 +424,7 @@ export function AdminUploadDialog({
                   {screenshotFiles.map((file, index) =>
                     screenshotUrls[index] ? (
                       <div key={index} className="relative group">
-                        <div className="w-full h-20 relative">
-                          <Image src={screenshotUrls[index]} alt={`Screenshot ${index + 1}`} fill sizes="(max-width: 768px) 25vw, 10vw" unoptimized className="object-cover rounded" />
-                        </div>
+                        <img src={screenshotUrls[index]} alt={`Screenshot ${index + 1}`} className="w-full h-20 object-cover rounded" />
                         <Button
                           variant="destructive"
                           size="sm"
@@ -485,5 +474,3 @@ export function AdminUploadDialog({
     </div>
   );
 }
-
-export default AdminUploadDialog;
