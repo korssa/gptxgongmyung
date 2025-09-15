@@ -5,23 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Menu, Search, Grid, List } from "lucide-react";
 import { useLanguage } from "@/hooks/use-language";
-import { FilterType } from "@/types";
 import { useAdmin } from "@/hooks/use-admin";
 import { GoogleTranslateWidget } from "@/components/google-translate-widget";
-import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
+import { createAdminButtonHandler } from "@/lib/translation-utils";
+import Image from "next/image";
 
 interface HeaderProps {
   viewMode: "grid" | "list";
-  onViewModeChange: (mode: "grid" | "list") => void;
+  onViewModeChangeAction: (mode: "grid" | "list") => void;
   searchQuery: string;
-  onSearchChange: (query: string) => void;
+  onSearchChangeAction: (query: string) => void;
 }
 
 export function Header({ 
   viewMode, 
-  onViewModeChange, 
+  onViewModeChangeAction, 
   searchQuery, 
-  onSearchChange 
+  onSearchChangeAction 
 }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { t } = useLanguage();
@@ -34,10 +34,13 @@ export function Header({
       <div className="container mx-auto flex h-16 items-center justify-center space-x-4">
         {/* 로고 */}
         <div className="flex items-center space-x-2">
-          <img 
-            src="/logo.png" 
+          <Image
+            src="/logo.png"
             alt="Logo"
+            width={32}
+            height={32}
             className="h-8 w-auto object-contain"
+            priority
           />
       <span className="text-white text-sm font-medium tracking-wide notranslate" translate="no">
             SINCE 2025
@@ -49,7 +52,7 @@ export function Header({
           <Button
             variant={viewMode === "grid" ? "default" : "ghost"}
             size="sm"
-            onClick={() => onViewModeChange("grid")}
+            onClick={() => onViewModeChangeAction("grid")}
             className={`h-8 w-8 p-0 ${viewMode === "grid" ? "bg-white text-blue-600" : "text-white hover:bg-white/20"}`}
           >
             <Grid className="h-4 w-4" />
@@ -57,7 +60,7 @@ export function Header({
           <Button
             variant={viewMode === "list" ? "default" : "ghost"}
             size="sm"
-            onClick={() => onViewModeChange("list")}
+            onClick={() => onViewModeChangeAction("list")}
             className={`h-8 w-8 p-0 ${viewMode === "list" ? "bg-white text-blue-600" : "text-white hover:bg-white/20"}`}
           >
             <List className="h-4 w-4" />
@@ -74,7 +77,7 @@ export function Header({
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-white/70" />
             <Input
               value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
+              onChange={(e) => onSearchChangeAction(e.target.value)}
               placeholder={t("search")}
               className="pl-8 bg-white/20 border-white/30 text-white placeholder:text-white/70"
             />
