@@ -201,6 +201,14 @@ export function AdminUploadPublishDialog({ onUpload, onUploadAction, buttonProps
         formDataToSend.append("store", formData.store || "google-play");
         formDataToSend.append("storeUrl", formData.storeUrl || "");
         formDataToSend.append("appCategory", formData.appCategory || "normal");
+        // Append screenshots as multiple 'screenshots'
+        if (screenshotFiles && screenshotFiles.length > 0) {
+          for (const shot of screenshotFiles) {
+            try {
+              formDataToSend.append("screenshots", shot);
+            } catch {}
+          }
+        }
 
         const response = await fetch(`/api/gallery?type=normal`, {
           method: "POST",
