@@ -19,16 +19,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, EyeOff, Calendar, User, FileText, ArrowLeft, Home } from "lucide-react";
+import { Plus, Edit, Trash2, EyeOff, Calendar, User, ArrowLeft, Home } from "lucide-react";
 import { ContentItem, ContentFormData, ContentType } from "@/types";
 import { useAdmin } from "@/hooks/use-admin";
 import { uploadFile } from "@/lib/storage-adapter";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
 import { loadContentsFromBlob } from "@/lib/data-loader";
 import { loadMemoDraft, saveMemoDraft, clearMemoDraft } from "@/lib/memo-storage";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 interface NewsListProps {
   type: string; // "news"
@@ -408,11 +407,14 @@ export function NewsList({ type, onBack }: NewsListProps) {
               {/* 이미지가 있으면 본문 시작 부분에 배치 */}
               {selected.imageUrl && (
                 <div className="flex justify-start mb-6">
-                  <img
+                  <Image
                     src={selected.imageUrl}
                     alt={selected.title}
-                    className="max-w-xs h-auto rounded shadow-lg"
+                    width={480}
+                    height={300}
+                    className="w-auto h-auto max-w-xs rounded shadow-lg"
                     style={{ maxHeight: '300px' }}
+                    sizes="(max-width: 640px) 320px, 480px"
                   />
                 </div>
               )}
@@ -469,9 +471,27 @@ export function NewsList({ type, onBack }: NewsListProps) {
   if (loading) {
     return (
       <div className="w-full max-w-4xl mx-auto px-4">
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-400 mx-auto"></div>
-          <p className="text-gray-400 mt-4">News를 불러오는 중...</p>
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-white mb-2">News</h2>
+          <p className="text-gray-400">Stay updated with the latest news and updates</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Card key={`news-skeleton-${i}`} className="bg-gray-800/50 border-2 border-gray-700">
+              <div className="mb-3 aspect-square overflow-hidden rounded-lg">
+                <div className="w-full h-full bg-gray-700 animate-pulse" />
+              </div>
+              <CardHeader className="pb-3">
+                <div className="h-5 bg-gray-700 rounded animate-pulse w-3/4 mb-2" />
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex items-center justify-between text-sm text-gray-400">
+                  <div className="h-3 bg-gray-700 rounded animate-pulse w-1/3" />
+                  <div className="h-3 bg-gray-700 rounded animate-pulse w-12" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
@@ -581,10 +601,13 @@ export function NewsList({ type, onBack }: NewsListProps) {
                         </div>
                         {imagePreview && (
                           <div className="mt-2">
-                            <img
+                            <Image
                               src={imagePreview}
                               alt="미리보기"
+                              width={128}
+                              height={128}
                               className="w-32 h-32 object-cover rounded border"
+                              unoptimized
                             />
                           </div>
                         )}
@@ -725,10 +748,13 @@ export function NewsList({ type, onBack }: NewsListProps) {
                       </div>
                       {imagePreview && (
                         <div className="mt-2">
-                          <img
+                          <Image
                             src={imagePreview}
                             alt="미리보기"
+                            width={128}
+                            height={128}
                             className="w-32 h-32 object-cover rounded border"
+                            unoptimized
                           />
                         </div>
                       )}
@@ -774,11 +800,13 @@ export function NewsList({ type, onBack }: NewsListProps) {
            >
             <CardHeader className="pb-3">
               {content.imageUrl && (
-                <div className="mb-3 aspect-square overflow-hidden rounded-lg">
-                  <img
+                <div className="mb-3 aspect-square overflow-hidden rounded-lg relative">
+                  <Image
                     src={content.imageUrl}
                     alt={content.title}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   />
                 </div>
               )}
