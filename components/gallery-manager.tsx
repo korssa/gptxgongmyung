@@ -6,20 +6,10 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Trash2, Edit, Star, Download, User } from "lucide-react";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
-// dynamic import not used
+import { AdminFeaturedUploadDialog } from "./admin-featured-upload-dialog";
+import { AdminEventsUploadDialog } from "./admin-events-upload-dialog";
 import { AppItem } from "@/types";
 import Image from "next/image";
-
-// Switch to static client imports to avoid rare production mismatches with dynamic import chunking
-import AdminFeaturedUploadDialog from "./admin-featured-upload-dialog";
-import AdminEventsUploadDialog from "./admin-events-upload-dialog";
-
-// Type guard to safely detect optional imageUrl on items returned from API
-function hasImageUrl(obj: unknown): obj is { imageUrl: string } {
-  if (!obj || typeof obj !== "object") return false;
-  const maybe = (obj as { imageUrl?: unknown }).imageUrl;
-  return typeof maybe === "string" && maybe.length > 0;
-}
 
 interface GalleryManagerProps {
   type: "gallery" | "featured" | "events" | "normal";
@@ -37,7 +27,6 @@ export function GalleryManager({
   isAdmin = false,
 }: GalleryManagerProps) {
   const [items, setItems] = useState<AppItem[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   // Horizontal scroller: no pagination
   // Admin upload dialog states (featured/events 전용)
   const [isFeaturedDialogOpen, setFeaturedDialogOpen] = useState(false);
@@ -73,9 +62,10 @@ export function GalleryManager({
     if (isMobile) {
       const firstItem = el.firstElementChild as HTMLElement | null;
       const itemWidth = firstItem?.offsetWidth ?? 170; // fallback to our card width
-      const styles = getComputedStyle(el);
-  const gapStr = (styles.columnGap || styles.getPropertyValue("gap") || "0").toString();
-      const gap = parseFloat(gapStr);
+     const styles = getComputedStyle(el) as CSSStyleDeclaration;
+const gapStr = (styles.columnGap || styles.gap || "0").toString();
+const gap = parseFloat(gapStr);
+
       amount = itemWidth + (Number.isFinite(gap) ? gap : 0);
     } else {
       amount = Math.max(320, Math.floor(el.clientWidth * 0.9));
@@ -105,8 +95,8 @@ export function GalleryManager({
       if (!scrollStateRef.current) return;
       const { start, from, to, duration } = scrollStateRef.current;
       // deltaTime in ms (not strictly needed for absolute-time easing, but kept for clarity)
-  // track last timestamp to keep animation consistent (reserved for future dynamic speed tweaks)
-  scrollStateRef.current.lastTs = ts;
+      const dt = scrollStateRef.current.lastTs != null ? ts - scrollStateRef.current.lastTs : 0;
+      scrollStateRef.current.lastTs = ts;
 
       const elapsed = ts - start;
       const t = Math.max(0, Math.min(1, elapsed / duration));
@@ -126,7 +116,6 @@ export function GalleryManager({
 
   const loadItems = useCallback(async () => {
     try {
-      setIsLoading(true);
       // 'normal' 뷰는 실제로 gallery-gallery 폴더에서 관리되므로 API는 gallery로 조회
       const queryType = type === "normal" ? "gallery" : type;
       const response = await fetch(`/api/gallery?type=${queryType}`);
@@ -147,8 +136,6 @@ export function GalleryManager({
       }
     } catch {
       // noop
-    } finally {
-      setIsLoading(false);
     }
   }, [type]);
 
@@ -162,9 +149,7 @@ export function GalleryManager({
       const item = items.find((i) => i.id === itemId);
       if (confirm(`"${item?.name}"을(를) 삭제하시겠습니까?`)) {
         try {
-          // 'normal' 뷰는 실제로 gallery 폴더에서 관리되므로 삭제시에도 gallery로 매핑
-          const deleteType = type === "normal" ? "gallery" : type;
-          const response = await fetch(`/api/gallery?type=${deleteType}&id=${itemId}`, {
+          const response = await fetch(`/api/gallery?type=${type}&id=${itemId}`, {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
           });
@@ -233,42 +218,7 @@ export function GalleryManager({
 
       {/* 가로 스크롤 카드 행 (전체 필드 포함) */}
       <div ref={scrollerRef} className="flex flex-row gap-4 overflow-x-auto py-4 px-2">
-        {isLoading ? (
-          // Skeleton placeholders while loading
-          Array.from({ length: 8 }).map((_, i) => (
-            <Card
-              key={`skeleton-${i}`}
-              className="w-[170px] md:w-[340px] flex-shrink-0 overflow-hidden relative"
-              style={{ backgroundColor: "#D1E2EA" }}
-            >
-              <div className="relative">
-                <div className="aspect-square bg-gradient-to-br from-blue-50 to-purple-50 relative">
-                  <div className="absolute inset-0 animate-pulse bg-gray-200/60" />
-                </div>
-              </div>
-              <CardContent className="px-1.5 py-0" style={{ backgroundColor: "#D1E2EA" }}>
-                <div className="flex items-start space-x-2 mb-2">
-                  <div className="w-16 h-16 rounded-xl bg-gray-200 animate-pulse flex-shrink-0" />
-                  <div className="flex-1 min-w-0 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-                    <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2" />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="h-3 bg-gray-200 rounded animate-pulse w-1/3" />
-                  <div className="h-3 bg-gray-200 rounded animate-pulse w-8" />
-                </div>
-                <div className="flex gap-1.5 mb-3">
-                  <div className="h-5 bg-gray-200 rounded-full animate-pulse w-12" />
-                  <div className="h-5 bg-gray-200 rounded-full animate-pulse w-10" />
-                </div>
-              </CardContent>
-              <CardFooter className="w-full bg-[#84CC9A] border-t border-gray-300 px-2 py-2">
-                <div className="w-full h-8 bg-gray-200 rounded animate-pulse" />
-              </CardFooter>
-            </Card>
-          ))
-        ) : items.length === 0 ? (
+        {items.length === 0 ? (
           type !== "normal" && (
             <div className="col-span-full">
               <Card className="bg-gray-800 border-gray-700">
@@ -282,7 +232,7 @@ export function GalleryManager({
           items.map((item, index) => (
             <Card
               key={item.id}
-              className={`group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 w-[170px] md:w-[340px] flex-shrink-0 ${
+              className={`group overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 w-[170px] flex-shrink-0 ${
                 type === "featured"
                   ? "relative featured-glow-card"
                   : type === "events"
@@ -309,23 +259,7 @@ export function GalleryManager({
                         src={item.screenshotUrls[0]}
                         alt={item.name}
                         fill
-                        sizes="(min-width: 768px) 340px, 170px"
-                        className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : hasImageUrl(item) ? (
-                      <Image
-                        src={(item as { imageUrl: string }).imageUrl}
-                        alt={item.name}
-                        fill
-                        sizes="(min-width: 768px) 340px, 170px"
-                        className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : item.iconUrl ? (
-                      <Image
-                        src={item.iconUrl}
-                        alt={item.name}
-                        fill
-                        sizes="(min-width: 768px) 340px, 170px"
+                        unoptimized
                         className="object-cover object-center transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (
@@ -384,7 +318,7 @@ export function GalleryManager({
                     alt={item.name}
                     width={64}
                     height={64}
-                    sizes="64px"
+                    unoptimized
                     className="w-16 h-16 rounded-xl object-cover object-center flex-shrink-0"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -510,8 +444,8 @@ export function GalleryManager({
 
       {/* pagination removed for horizontal scroller */}
 
-      {/* 업로드 다이얼로그 (admin 전용): featured/events에서만 동작 - open일 때만 렌더 */}
-      {isAdmin && type === "featured" && isFeaturedDialogOpen && (
+      {/* 업로드 다이얼로그 (admin 전용): featured/events에서만 동작 */}
+      {isAdmin && type === "featured" && (
         <AdminFeaturedUploadDialog
           isOpen={isFeaturedDialogOpen}
           onClose={() => setFeaturedDialogOpen(false)}
@@ -522,7 +456,7 @@ export function GalleryManager({
           targetGallery={type}
         />
       )}
-      {isAdmin && type === "events" && isEventsDialogOpen && (
+      {isAdmin && type === "events" && (
         <AdminEventsUploadDialog
           isOpen={isEventsDialogOpen}
           onClose={() => setEventsDialogOpen(false)}
