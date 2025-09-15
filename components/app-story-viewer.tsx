@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Calendar, User, Eye, ArrowLeft } from "lucide-react";
-import { ContentItem, ContentType } from "@/types";
+import { Calendar, User, ArrowLeft } from "lucide-react";
+import { ContentItem } from "@/types";
+import Image from "next/image";
 
 interface AppStoryViewerProps {
   onBack?: () => void;
@@ -50,7 +50,7 @@ export function AppStoryViewer({ onBack }: AppStoryViewerProps) {
         const data = await response.json();
         setStories(data.filter((story: ContentItem) => story.isPublished));
       }
-    } catch (error) {
+    } catch {
       // 스토리 로드 오류
     }
   };
@@ -152,10 +152,13 @@ export function AppStoryViewer({ onBack }: AppStoryViewerProps) {
           {/* 이미지 */}
           {selectedStory.imageUrl && (
             <div className="mb-6 flex justify-center">
-              <img
+              <Image
                 src={selectedStory.imageUrl}
                 alt={selectedStory.title}
-                className="w-full max-h-[32rem] object-contain rounded-lg border border-gray-600"
+                width={1024}
+                height={512}
+                className="w-full h-auto max-h-[32rem] object-contain rounded-lg border border-gray-600"
+                sizes="(max-width: 768px) 100vw, 672px"
               />
             </div>
           )}
@@ -261,10 +264,13 @@ export function AppStoryViewer({ onBack }: AppStoryViewerProps) {
                 {/* 썸네일 이미지 */}
                 {story.imageUrl && (
                   <div className="mb-4 flex justify-center">
-                    <img
+                    <Image
                       src={story.imageUrl}
                       alt={story.title}
-                      className="w-1/4 rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                      width={240}
+                      height={240}
+                      className="w-1/4 h-auto rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                      sizes="(max-width: 640px) 120px, 240px"
                     />
                   </div>
                 )}
