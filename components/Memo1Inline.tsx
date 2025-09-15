@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,17 +20,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Plus, Edit, Trash2, EyeOff, Calendar, User } from "lucide-react";
+import { Plus, Edit, Trash2, Calendar, User } from "lucide-react";
 import { ContentItem, ContentFormData, ContentType } from "@/types";
 import { useAdmin } from "@/hooks/use-admin";
 import { uploadFile } from "@/lib/storage-adapter";
 import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
-import { loadMemoDraft, saveMemoDraft, clearMemoDraft } from "@/lib/memo-storage";
+import { clearMemoDraft } from "@/lib/memo-storage";
 import SoftGlowStar from "@/components/soft-glow-star";
 
 export default function Memo1Inline() {
   const [contents, setContents] = useState<ContentItem[]>([]);
-  const [selected, setSelected] = useState<ContentItem | null>(null);
+  const [, setSelected] = useState<ContentItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingContent, setEditingContent] = useState<ContentItem | null>(null);
@@ -262,7 +263,14 @@ export default function Memo1Inline() {
                     />
                     {imagePreview && (
                       <div className="mt-2">
-                        <img src={imagePreview} alt="미리보기" className="w-32 h-32 object-cover rounded-lg" />
+                        <Image
+                          src={imagePreview}
+                          alt="미리보기"
+                          width={128}
+                          height={128}
+                          unoptimized
+                          className="w-32 h-32 object-cover rounded-lg"
+                        />
                       </div>
                     )}
                   </div>
@@ -305,11 +313,13 @@ export default function Memo1Inline() {
                   </p>
                   
                   {content.imageUrl && (
-                    <div className="w-full h-32 bg-gray-800 rounded-lg overflow-hidden">
-                      <img 
-                        src={content.imageUrl} 
+                    <div className="w-full h-32 bg-gray-800 rounded-lg overflow-hidden relative">
+                      <Image
+                        src={content.imageUrl}
                         alt={content.title}
-                        className="w-full h-full object-cover"
+                        fill
+                        sizes="(max-width: 1024px) 100vw, 33vw"
+                        className="object-cover"
                       />
                     </div>
                   )}
