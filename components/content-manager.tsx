@@ -10,10 +10,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, Eye, ArrowLeft } from "lucide-react";
+import { Calendar, User } from "lucide-react";
 import { ContentItem, ContentType } from "@/types";
-import { uploadFile } from "@/lib/storage-adapter";
-import { blockTranslationFeedback, createAdminButtonHandler } from "@/lib/translation-utils";
+import { blockTranslationFeedback } from "@/lib/translation-utils";
+import Image from "next/image";
 
 interface ContentManagerProps {
   type: ContentType;
@@ -38,21 +38,19 @@ export function ContentManager({
 
 
 
-  // 콘텐츠 목록 로드
-  const loadContents = async () => {
-    try {
-      const response = await fetch(`/api/content?type=${type}`);
-      if (response.ok) {
-        const data = await response.json();
-        setContents(data.filter((c: ContentItem) => c.isPublished));
-      }
-    } catch (error) {
-      // 콘텐츠 로드 실패
-    }
-  };
-
   useEffect(() => {
-    loadContents();
+    const load = async () => {
+      try {
+        const response = await fetch(`/api/content?type=${type}`);
+        if (response.ok) {
+          const data = await response.json();
+          setContents(data.filter((c: ContentItem) => c.isPublished));
+        }
+      } catch {
+        // 콘텐츠 로드 실패
+      }
+    };
+    load();
 
     // 좋아요 정보 로드
     const savedLikes = localStorage.getItem(`content-likes-${type}`);
@@ -148,10 +146,13 @@ export function ContentManager({
           {/* 이미지 */}
           {selectedContent.imageUrl && (
             <div className="mb-6 flex justify-center">
-              <img
+              <Image
                 src={selectedContent.imageUrl}
                 alt={selectedContent.title}
-                className="w-full max-h-[32rem] object-contain rounded-lg border border-gray-600"
+                width={1024}
+                height={512}
+                className="w-full h-auto max-h-[32rem] object-contain rounded-lg border border-gray-600"
+                sizes="(max-width: 768px) 100vw, 672px"
               />
             </div>
           )}
@@ -240,10 +241,13 @@ export function ContentManager({
               <CardContent>
                 {content.imageUrl && (
                   <div className="mb-4 flex justify-center">
-                    <img
+                    <Image
                       src={content.imageUrl}
                       alt={content.title}
-                      className="w-1/4 rounded-lg object-contain"
+                      width={240}
+                      height={240}
+                      className="w-1/4 h-auto rounded-lg object-contain"
+                      sizes="(max-width: 640px) 120px, 240px"
                     />
                   </div>
                 )}
