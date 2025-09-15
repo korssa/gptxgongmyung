@@ -11,12 +11,13 @@ import { AppItem } from "@/types";
 import Image from "next/image";
 
 // Dynamic imports for admin dialogs (reduce initial bundle for non-admin users)
+// Use default export to avoid named export mismatches in production builds
 const AdminFeaturedUploadDialog = dynamic(
-  () => import("./admin-featured-upload-dialog").then((m) => m.AdminFeaturedUploadDialog),
+  () => import("./admin-featured-upload-dialog"),
   { ssr: false, loading: () => null }
 );
 const AdminEventsUploadDialog = dynamic(
-  () => import("./admin-events-upload-dialog").then((m) => m.AdminEventsUploadDialog),
+  () => import("./admin-events-upload-dialog"),
   { ssr: false, loading: () => null }
 );
 
